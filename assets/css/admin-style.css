@@ -1,0 +1,610 @@
+/**
+ * Awesome Hotel Booking - Luxury Typography & UI/UX Design System
+ * Theme: Editorial Hospitality & High-Performance Admin
+ * Version: 2.2.0
+ */
+
+/* ==========================================================================
+   1. DESIGN TOKENS & TYPOGRAPHIC SCALE
+   ========================================================================== */
+:root {
+  /* Font Families */
+  --ahbn-font-display: 'Playfair Display', Georgia, serif;
+  --ahbn-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ahbn-font-mono: 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+
+  /* Fluid Typographic Scale */
+  --ahbn-text-xs: 0.75rem;     /* 12px - Eyebrows & Tags */
+  --ahbn-text-sm: 0.8125rem;   /* 13px - Meta & Secondary */
+  --ahbn-text-base: 0.875rem;  /* 14px - Body Text */
+  --ahbn-text-md: 0.9375rem;   /* 15px - Nav & Inputs */
+  --ahbn-text-lg: 1.125rem;    /* 18px - Card Titles */
+  --ahbn-text-xl: 1.375rem;    /* 22px - Section Titles */
+  --ahbn-text-2xl: 1.75rem;    /* 28px - Dashboard Stat Figures */
+  --ahbn-text-3xl: 2.25rem;    /* 36px - Hero Statements */
+
+  /* Line Heights */
+  --ahbn-lh-tight: 1.15;
+  --ahbn-lh-snug: 1.3;
+  --ahbn-lh-normal: 1.55;
+  --ahbn-lh-relaxed: 1.7;
+
+  /* Luxury Hotel Palette */
+  --ahbn-navy-950: #040914;
+  --ahbn-navy-900: #0a1426;
+  --ahbn-navy-800: #101e38;
+  --ahbn-navy-700: #182c4f;
+
+  --ahbn-gold-600: #9f7d49;
+  --ahbn-gold-500: #c29d66;
+  --ahbn-gold-400: #d8b988;
+  --ahbn-gold-100: #fbf8f3;
+  --ahbn-gold-50:  #fdfbfa;
+
+  /* Neutrals & Slate */
+  --ahbn-slate-50:  #f8fafc;
+  --ahbn-slate-100: #f1f5f9;
+  --ahbn-slate-200: #e2e8f0;
+  --ahbn-slate-400: #94a3b8;
+  --ahbn-slate-500: #64748b;
+  --ahbn-slate-800: #1e293b;
+  --ahbn-slate-900: #0f172a;
+
+  /* Semantics */
+  --ahbn-emerald: #0d9488;
+  --ahbn-emerald-bg: #f0fdfa;
+  --ahbn-emerald-border: #99f6e4;
+
+  --ahbn-amber: #d97706;
+  --ahbn-amber-bg: #fffbeb;
+  --ahbn-amber-border: #fde68a;
+
+  --ahbn-rose: #e11d48;
+  --ahbn-rose-bg: #fff1f2;
+  --ahbn-rose-border: #fecdd3;
+
+  /* Elevated Surfaces */
+  --ahbn-surface: #ffffff;
+  --ahbn-radius-sm: 8px;
+  --ahbn-radius-md: 14px;
+  --ahbn-radius-lg: 20px;
+  --ahbn-radius-full: 9999px;
+
+  /* Layered Shadows */
+  --ahbn-shadow-subtle: 0 1px 3px rgba(10, 20, 38, 0.04), 0 1px 2px rgba(10, 20, 38, 0.02);
+  --ahbn-shadow-card: 0 4px 20px -2px rgba(10, 20, 38, 0.05), 0 2px 6px -1px rgba(10, 20, 38, 0.03);
+  --ahbn-shadow-hover: 0 20px 30px -4px rgba(10, 20, 38, 0.09), 0 8px 12px -2px rgba(10, 20, 38, 0.04);
+  --ahbn-shadow-glow: 0 0 20px rgba(194, 157, 102, 0.25);
+
+  --ahbn-transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==========================================================================
+   2. GLOBAL RESET & BASE TYPOGRAPHY
+   ========================================================================== */
+.wrap.awesome-hotel-booking {
+  margin: 24px 24px 0 0 !important;
+  font-family: var(--ahbn-font-body) !important;
+  color: var(--ahbn-slate-800);
+  line-height: var(--ahbn-lh-normal);
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.wrap.awesome-hotel-booking * {
+  box-sizing: border-box;
+}
+
+/* Headings Typography */
+.ahbn-hero-title,
+.ahbn-brand-header h2,
+.ahbn-tab-title,
+.ahbn-suite-name {
+  font-family: var(--ahbn-font-display) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   3. SIDEBAR NAVIGATION
+   ========================================================================== */
+.ahbn-sidebar-container {
+  flex: 0 0 270px;
+  background: var(--ahbn-surface);
+  border: 1px solid var(--ahbn-slate-200);
+  border-radius: var(--ahbn-radius-lg);
+  box-shadow: var(--ahbn-shadow-card);
+  overflow: hidden;
+  position: sticky;
+  top: 48px;
+}
+
+.ahbn-brand-header {
+  padding: 24px 20px;
+  background: linear-gradient(180deg, var(--ahbn-navy-900) 0%, var(--ahbn-navy-800) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ahbn-brand-header h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ahbn-brand-header h2 .dashicons {
+  color: var(--ahbn-gold-500);
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.ahbn-brand-header .version-tag {
+  font-family: var(--ahbn-font-mono);
+  background: rgba(194, 157, 102, 0.15);
+  color: var(--ahbn-gold-400);
+  border: 1px solid rgba(194, 157, 102, 0.3);
+  padding: 3px 8px;
+  border-radius: var(--ahbn-radius-full);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.ahbn-left-tabs {
+  list-style: none;
+  margin: 8px 0 !important;
+  padding: 8px;
+}
+
+.ahbn-left-tabs li {
+  margin: 0 0 4px 0 !important;
+}
+
+.ahbn-left-tabs li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  text-decoration: none;
+  color: var(--ahbn-slate-500);
+  font-size: var(--ahbn-text-sm);
+  font-weight: 600;
+  border-radius: var(--ahbn-radius-sm);
+  transition: var(--ahbn-transition);
+}
+
+.ahbn-left-tabs li a .dashicons {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--ahbn-slate-400);
+  transition: var(--ahbn-transition);
+}
+
+.ahbn-left-tabs li a:hover {
+  color: var(--ahbn-navy-900);
+  background: var(--ahbn-slate-50);
+}
+
+.ahbn-left-tabs li a:hover .dashicons {
+  color: var(--ahbn-gold-600);
+}
+
+.ahbn-left-tabs li a.active {
+  background: var(--ahbn-navy-900);
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(10, 20, 38, 0.15);
+}
+
+.ahbn-left-tabs li a.active .dashicons {
+  color: var(--ahbn-gold-500) !important;
+}
+
+/* ==========================================================================
+   4. CONTENT CANVAS & HERO DISPLAY
+   ========================================================================== */
+.ahbn-right-box {
+  flex: 1;
+  min-width: 0;
+  background: var(--ahbn-surface);
+  border: 1px solid var(--ahbn-slate-200);
+  border-radius: var(--ahbn-radius-lg);
+  padding: 36px;
+  box-shadow: var(--ahbn-shadow-card);
+}
+
+/* Editorial Hero Banner */
+.ahbn-hero {
+  background: 
+    radial-gradient(circle at 100% 0%, rgba(194, 157, 102, 0.15) 0%, transparent 50%),
+    linear-gradient(135deg, var(--ahbn-navy-950) 0%, var(--ahbn-navy-900) 100%);
+  border-radius: var(--ahbn-radius-md);
+  padding: 40px;
+  color: #ffffff;
+  margin-bottom: 32px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--ahbn-shadow-card);
+}
+
+.ahbn-hero-title {
+  color: #ffffff !important;
+  font-size: 1.85rem;
+  margin: 0 !important;
+  font-weight: 600 !important;
+  line-height: var(--ahbn-lh-tight);
+}
+
+.ahbn-hero-subtitle {
+  color: #94a3b8;
+  font-size: var(--ahbn-text-base);
+  margin: 10px 0 0 0;
+  font-weight: 500;
+}
+
+.ahbn-hero-subtitle strong {
+  color: var(--ahbn-gold-400);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   5. STATS CARDS & METRIC COUNTERS
+   ========================================================================== */
+.ahbn-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.ahbn-stat-card {
+  background: var(--ahbn-surface);
+  padding: 24px 26px;
+  border-radius: var(--ahbn-radius-md);
+  border: 1px solid var(--ahbn-slate-200);
+  box-shadow: var(--ahbn-shadow-subtle);
+  transition: var(--ahbn-transition);
+  position: relative;
+}
+
+.ahbn-stat-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--ahbn-gold-500);
+  box-shadow: var(--ahbn-shadow-hover);
+}
+
+.ahbn-stat-label {
+  font-size: var(--ahbn-text-xs);
+  font-weight: 700;
+  color: var(--ahbn-slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.ahbn-stat-value {
+  font-family: var(--ahbn-font-body);
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--ahbn-navy-900);
+  letter-spacing: -0.03em;
+  line-height: var(--ahbn-lh-tight);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ahbn-stat-value small.ahbn-unit {
+  font-size: var(--ahbn-text-xs);
+  font-weight: 700;
+  color: var(--ahbn-gold-600);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   6. RESERVATION ROW ITEMS & TABLE CELLS
+   ========================================================================== */
+.ahbn-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--ahbn-text-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ahbn-navy-900);
+  margin: 36px 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ahbn-slate-200);
+}
+
+.ahbn-section-header .dashicons {
+  color: var(--ahbn-gold-500);
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
+}
+
+.ahbn-rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ahbn-row {
+  background: var(--ahbn-surface);
+  border: 1px solid var(--ahbn-slate-200);
+  border-radius: var(--ahbn-radius-md);
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: var(--ahbn-transition);
+}
+
+.ahbn-row:hover {
+  border-color: var(--ahbn-gold-500);
+  background: var(--ahbn-gold-50);
+  box-shadow: var(--ahbn-shadow-subtle);
+  transform: translateX(3px);
+}
+
+.ahbn-row .ahbn-icon-box {
+  width: 44px;
+  height: 44px;
+  background: var(--ahbn-slate-50);
+  border: 1px solid var(--ahbn-slate-200);
+  border-radius: var(--ahbn-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ahbn-navy-900);
+  flex-shrink: 0;
+}
+
+.ahbn-row .ahbn-info-name {
+  display: block;
+  font-size: var(--ahbn-text-md);
+  font-weight: 700;
+  color: var(--ahbn-slate-900);
+  letter-spacing: -0.01em;
+}
+
+.ahbn-row .ahbn-info-meta {
+  display: block;
+  font-size: var(--ahbn-text-sm);
+  color: var(--ahbn-slate-500);
+  margin-top: 3px;
+}
+
+.ahbn-row .ahbn-price {
+  font-family: var(--ahbn-font-body);
+  font-size: var(--ahbn-text-lg);
+  font-weight: 800;
+  color: var(--ahbn-navy-900);
+  letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   7. LUXURY BADGES & BUTTONS
+   ========================================================================== */
+.ahbn-badge,
+.ahbn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--ahbn-radius-full);
+  font-size: var(--ahbn-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.status-confirmed,
+.ahbn-badge-success {
+  background: var(--ahbn-emerald-bg);
+  color: var(--ahbn-emerald);
+  border: 1px solid var(--ahbn-emerald-border);
+}
+
+.status-pending,
+.ahbn-badge-warning {
+  background: var(--ahbn-amber-bg);
+  color: var(--ahbn-amber);
+  border: 1px solid var(--ahbn-amber-border);
+}
+
+.status-cancelled,
+.ahbn-badge-danger {
+  background: var(--ahbn-rose-bg);
+  color: var(--ahbn-rose);
+  border: 1px solid var(--ahbn-rose-border);
+}
+
+.ahbn-id-badge {
+  font-family: var(--ahbn-font-mono);
+  background: var(--ahbn-slate-100);
+  color: var(--ahbn-navy-900);
+  padding: 3px 8px;
+  border-radius: var(--ahbn-radius-sm);
+  font-size: var(--ahbn-text-xs);
+  font-weight: 700;
+  border: 1px solid var(--ahbn-slate-200);
+}
+
+/* Primary CTA Button */
+.ahbn-btn,
+.ahbn-btn-primary,
+.button.ahbn-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--ahbn-navy-900) !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--ahbn-radius-sm) !important;
+  padding: 10px 20px !important;
+  font-size: var(--ahbn-text-sm) !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  text-decoration: none !important;
+  transition: var(--ahbn-transition);
+  height: 42px;
+  box-shadow: var(--ahbn-shadow-subtle);
+}
+
+.ahbn-btn-primary:hover,
+.button.ahbn-btn-primary:hover {
+  background: var(--ahbn-gold-600) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(159, 125, 73, 0.25);
+}
+
+/* Secondary Actions */
+.ahbn-btn-action,
+.ahbn-btn-review {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px !important;
+  font-size: var(--ahbn-text-xs) !important;
+  font-weight: 700 !important;
+  border-radius: var(--ahbn-radius-sm) !important;
+  text-decoration: none !important;
+  border: 1px solid var(--ahbn-slate-200) !important;
+  background: var(--ahbn-surface) !important;
+  color: var(--ahbn-slate-700) !important;
+  transition: var(--ahbn-transition);
+}
+
+.ahbn-btn-action:hover,
+.ahbn-btn-review:hover {
+  border-color: var(--ahbn-navy-900) !important;
+  color: var(--ahbn-navy-900) !important;
+  background: var(--ahbn-slate-50) !important;
+}
+
+/* ==========================================================================
+   8. FORM FIELDS & ACCENTS
+   ========================================================================== */
+.ahbn-label {
+  display: block;
+  font-size: var(--ahbn-text-xs);
+  font-weight: 700;
+  color: var(--ahbn-slate-900);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.ahbn-input,
+.ahbn-select,
+.ahbn-textarea {
+  width: 100%;
+  border: 1px solid var(--ahbn-slate-200) !important;
+  border-radius: var(--ahbn-radius-sm) !important;
+  padding: 10px 14px !important;
+  font-size: var(--ahbn-text-base) !important;
+  color: var(--ahbn-slate-900) !important;
+  background: var(--ahbn-surface) !important;
+  box-shadow: none !important;
+  transition: var(--ahbn-transition) !important;
+}
+
+.ahbn-input:focus,
+.ahbn-select:focus,
+.ahbn-textarea:focus {
+  border-color: var(--ahbn-navy-900) !important;
+  box-shadow: 0 0 0 3px rgba(10, 20, 38, 0.08) !important;
+  outline: none !important;
+}
+
+/* Toggle Switches */
+.ahbn-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.ahbn-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ahbn-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--ahbn-slate-200);
+  transition: 0.25s;
+  border-radius: var(--ahbn-radius-full);
+}
+
+.ahbn-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  transition: 0.25s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+input:checked + .ahbn-slider {
+  background-color: var(--ahbn-navy-900);
+}
+
+input:checked + .ahbn-slider:before {
+  transform: translateX(20px);
+}
+
+/* ==========================================================================
+   9. RESPONSIVENESS & PRINT
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .wrap.awesome-hotel-booking {
+    flex-direction: column;
+  }
+  .ahbn-sidebar-container {
+    flex: 1 1 100%;
+    width: 100%;
+    position: static;
+  }
+}
+
+@media print {
+  #adminmenumain,
+  #wpadminbar,
+  #wpfooter,
+  .ahbn-sidebar-container,
+  .ahbn-actions,
+  .ahbn-footer-link {
+    display: none !important;
+  }
+  .wrap.awesome-hotel-booking {
+    margin: 0 !important;
+  }
+  .ahbn-right-box {
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+}
