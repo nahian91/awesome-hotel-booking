@@ -5,7 +5,7 @@
  * Fully compliant with WordPress dbDelta formatting rules:
  * - One column/key definition per line
  * - Exactly two spaces after "PRIMARY KEY"
- * - Standardized indexes and collation
+ * - Standardized indexes, explicit defaults, and collation
  *
  * @package AwesomeHotelBooking
  */
@@ -40,8 +40,8 @@ function ahbn_install_database_schema() {
 		max_children int(11) NOT NULL DEFAULT '0',
 		amenities longtext NULL,
 		paid_extras longtext NULL,
-		thumbnail_id bigint(20) unsigned DEFAULT 0,
-		gallery_ids text NULL,
+		thumbnail_id bigint(20) unsigned NOT NULL DEFAULT 0,
+		gallery longtext NULL,
 		status varchar(20) NOT NULL DEFAULT 'publish',
 		menu_order int(11) NOT NULL DEFAULT '0',
 		created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -99,7 +99,7 @@ function ahbn_install_database_schema() {
 		department varchar(100) NOT NULL DEFAULT 'Operations',
 		expense_date date NOT NULL,
 		description text NULL,
-		receipt_id bigint(20) unsigned DEFAULT 0,
+		receipt_id bigint(20) unsigned NOT NULL DEFAULT 0,
 		created_by bigint(20) unsigned NOT NULL DEFAULT 0,
 		created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY  (id),
@@ -216,7 +216,7 @@ function ahbn_install_database_schema() {
 		meta_title varchar(255) NOT NULL DEFAULT '',
 		meta_description text NULL,
 		schema_type varchar(50) NOT NULL DEFAULT 'HotelRoom',
-		og_image_id bigint(20) unsigned DEFAULT 0,
+		og_image_id bigint(20) unsigned NOT NULL DEFAULT 0,
 		canonical_url varchar(255) NOT NULL DEFAULT '',
 		created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -225,7 +225,8 @@ function ahbn_install_database_schema() {
 	) {$charset_collate};";
 	dbDelta( $sql_seo );
 
-	update_option( 'ahbn_db_version', AHBN_DB_VERSION );
+	$current_ver = defined( 'AHBN_DB_VERSION' ) ? AHBN_DB_VERSION : '1.0.0';
+	update_option( 'ahbn_db_version', $current_ver );
 }
 
 /**
@@ -234,7 +235,8 @@ function ahbn_install_database_schema() {
  * @return void
  */
 function ahbn_check_db_updates() {
-	if ( get_option( 'ahbn_db_version' ) !== AHBN_DB_VERSION ) {
+	$target_ver = defined( 'AHBN_DB_VERSION' ) ? AHBN_DB_VERSION : '1.0.0';
+	if ( get_option( 'ahbn_db_version' ) !== $target_ver ) {
 		ahbn_install_database_schema();
 	}
 }

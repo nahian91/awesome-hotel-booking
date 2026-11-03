@@ -26,13 +26,15 @@ function ahbn_extra_service_tab() {
 	global $wpdb;
 	$table_services = $wpdb->prefix . 'ahbn_services';
 
-	// 1. Resolve Routing Parameters.
+	// 1. Resolve Routing Parameters (Synchronized with admin router).
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	$action     = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
-	$service_id = isset( $_GET['service_id'] ) ? absint( wp_unslash( $_GET['service_id'] ) ) : 0;
+	$action      = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+	$service_id  = isset( $_GET['service_id'] ) ? absint( wp_unslash( $_GET['service_id'] ) ) : 0;
+	$active_tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'extra_services';
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-	$base_service_url = admin_url( 'admin.php?page=awesome_hotel_booking&tab=addons' );
+	// Preserve the exact tab slug (extra_services or addons) so routing never breaks.
+	$base_service_url = admin_url( 'admin.php?page=awesome_hotel_booking&tab=' . rawurlencode( $active_tab ) );
 	$add_service_url  = add_query_arg( 'action', 'add', $base_service_url );
 
 	// 2. Handle POST Submissions (Save / Update / Delete).
@@ -66,22 +68,33 @@ function ahbn_extra_service_tab() {
 
 					// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					if ( $post_service_id > 0 ) {
-						$wpdb->update(
+						$updated = $wpdb->update(
 							$table_services,
 							$service_data,
 							array( 'id' => $post_service_id ),
 							$format,
 							array( '%d' )
 						);
-						echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'Extra service updated.', 'awesome-hotel-booking' ) . '</p></div>';
+
+						if ( false === $updated ) {
+							echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Database error: Could not update extra service.', 'awesome-hotel-booking' ) . ' ' . esc_html( $wpdb->last_error ) . '</p></div>';
+						} else {
+							echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'Extra service updated.', 'awesome-hotel-booking' ) . '</p></div>';
+							$action     = '';
+							$service_id = 0;
+						}
 					} else {
-						$wpdb->insert( $table_services, $service_data, $format );
-						echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'New extra service created.', 'awesome-hotel-booking' ) . '</p></div>';
+						$inserted = $wpdb->insert( $table_services, $service_data, $format );
+
+						if ( false === $inserted ) {
+							echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Database error: Could not create extra service.', 'awesome-hotel-booking' ) . ' ' . esc_html( $wpdb->last_error ) . '</p></div>';
+						} else {
+							echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'New extra service created.', 'awesome-hotel-booking' ) . '</p></div>';
+							$action     = '';
+							$service_id = 0;
+						}
 					}
 					// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
-					$action     = '';
-					$service_id = 0;
 				}
 			}
 		}

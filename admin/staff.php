@@ -4,6 +4,7 @@
  *
  * Built on high-performance custom relational database tables:
  * {$wpdb->prefix}ahbn_staff
+ * Styled with the Champagne Gold & Deep Navy enterprise UI system.
  *
  * @package AwesomeHotelBooking
  */
@@ -25,10 +26,13 @@ function ahbn_staff_tab() {
 	global $wpdb;
 	$table_staff = $wpdb->prefix . 'ahbn_staff';
 
-	// 1. Resolve Routing Parameters.
+	// 1. Resolve Routing Parameters & Filters.
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	$action   = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
-	$staff_id = isset( $_GET['staff_id'] ) ? absint( wp_unslash( $_GET['staff_id'] ) ) : 0;
+	$action        = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+	$staff_id      = isset( $_GET['staff_id'] ) ? absint( wp_unslash( $_GET['staff_id'] ) ) : 0;
+	$filter_role   = isset( $_GET['filter_role'] ) ? sanitize_key( wp_unslash( $_GET['filter_role'] ) ) : '';
+	$filter_status = isset( $_GET['filter_status'] ) ? sanitize_key( wp_unslash( $_GET['filter_status'] ) ) : '';
+	$search_query  = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 	$base_staff_url = admin_url( 'admin.php?page=awesome_hotel_booking&tab=staff' );
@@ -73,22 +77,33 @@ function ahbn_staff_tab() {
 
 					// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					if ( $post_staff_id > 0 ) {
-						$wpdb->update(
+						$updated = $wpdb->update(
 							$table_staff,
 							$staff_data,
 							array( 'id' => $post_staff_id ),
 							$format,
 							array( '%d' )
 						);
-						echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'Staff member profile updated.', 'awesome-hotel-booking' ) . '</p></div>';
+
+						if ( false === $updated ) {
+							echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Database error: Could not update staff member profile.', 'awesome-hotel-booking' ) . ' ' . esc_html( $wpdb->last_error ) . '</p></div>';
+						} else {
+							echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'Staff member profile updated.', 'awesome-hotel-booking' ) . '</p></div>';
+							$action   = '';
+							$staff_id = 0;
+						}
 					} else {
-						$wpdb->insert( $table_staff, $staff_data, $format );
-						echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'Staff member added to hotel roster.', 'awesome-hotel-booking' ) . '</p></div>';
+						$inserted = $wpdb->insert( $table_staff, $staff_data, $format );
+
+						if ( false === $inserted ) {
+							echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Database error: Could not save staff member to roster.', 'awesome-hotel-booking' ) . ' ' . esc_html( $wpdb->last_error ) . '</p></div>';
+						} else {
+							echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'Staff member added to hotel roster.', 'awesome-hotel-booking' ) . '</p></div>';
+							$action   = '';
+							$staff_id = 0;
+						}
 					}
 					// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
-					$action   = '';
-					$staff_id = 0;
 				}
 			}
 		}
@@ -107,7 +122,7 @@ function ahbn_staff_tab() {
 		}
 	}
 
-	// 3. Map Configs.
+	// 3. Department, Shift, & Role Configurations.
 	$roles_map = array(
 		'management'   => __( 'Management / Admin', 'awesome-hotel-booking' ),
 		'reception'    => __( 'Front Desk / Reception', 'awesome-hotel-booking' ),
@@ -122,6 +137,55 @@ function ahbn_staff_tab() {
 		'night'    => __( 'Night Audit (23:00 - 07:00)', 'awesome-hotel-booking' ),
 		'flexible' => __( 'Flexible / On-Call', 'awesome-hotel-booking' ),
 	);
+
+	// 4. Query Roster Metrics & Filtered Data.
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$metrics = $wpdb->get_row(
+		"SELECT 
+			COUNT(*) AS total_count,
+			COUNT(CASE WHEN status = 'active' THEN 1 END) AS active_count,
+			COUNT(CASE WHEN role = 'housekeeping' AND status = 'active' THEN 1 END) AS housekeeping_count,
+			COUNT(CASE WHEN role = 'reception' AND status = 'active' THEN 1 END) AS reception_count
+		 FROM {$table_staff}"
+	);
+
+	$total_count        = $metrics ? (int) $metrics->total_count : 0;
+	$active_count       = $metrics ? (int) $metrics->active_count : 0;
+	$housekeeping_count = $metrics ? (int) $metrics->housekeeping_count : 0;
+	$reception_count    = $metrics ? (int) $metrics->reception_count : 0;
+
+	// Build list query with search and filters.
+	$where_clauses = array( '1=1' );
+	$params        = array();
+
+	if ( ! empty( $search_query ) ) {
+		$where_clauses[] = '(full_name LIKE %s OR phone LIKE %s OR email LIKE %s)';
+		$like_val        = '%' . $wpdb->esc_like( $search_query ) . '%';
+		$params[]        = $like_val;
+		$params[]        = $like_val;
+		$params[]        = $like_val;
+	}
+
+	if ( ! empty( $filter_role ) ) {
+		$where_clauses[] = 'role = %s';
+		$params[]        = $filter_role;
+	}
+
+	if ( ! empty( $filter_status ) ) {
+		$where_clauses[] = 'status = %s';
+		$params[]        = $filter_status;
+	}
+
+	$where_sql = implode( ' AND ', $where_clauses );
+
+	if ( ! empty( $params ) ) {
+		$staff_members = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$table_staff} WHERE {$where_sql} ORDER BY id DESC", $params )
+		);
+	} else {
+		$staff_members = $wpdb->get_results( "SELECT * FROM {$table_staff} WHERE {$where_sql} ORDER BY id DESC" );
+	}
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 	$wp_users = get_users( array( 'fields' => array( 'ID', 'display_name', 'user_email' ), 'number' => 100 ) );
 
@@ -264,6 +328,7 @@ function ahbn_staff_tab() {
 			text-decoration: none;
 			color: inherit;
 			transition: all 0.2s ease;
+			box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 		}
 
 		.ahbn-stat-card:hover {
@@ -313,23 +378,61 @@ function ahbn_staff_tab() {
 
 		.ahbn-filter-controls {
 			display: flex;
-			gap: 16px;
+			gap: 12px;
 			align-items: center;
 			flex-wrap: wrap;
 		}
 
-		.ahbn-filter-field {
-			display: inline-flex;
-			align-items: center;
-			gap: 8px;
+		.ahbn-search-field {
+			flex: 1;
+			min-width: 220px;
 		}
 
-		.ahbn-filter-label {
-			font-size: 11px;
+		.ahbn-input,
+		.ahbn-select,
+		.ahbn-textarea {
+			width: 100%;
+			border: 1px solid #cbd5e1 !important;
+			border-radius: 8px !important;
+			padding: 8px 12px !important;
+			font-size: 13px !important;
+			background: #ffffff !important;
+			color: #0f172a !important;
+			box-shadow: none !important;
+		}
+
+		.ahbn-input,
+		.ahbn-select {
+			height: 38px !important;
+		}
+
+		.ahbn-input:focus,
+		.ahbn-select:focus,
+		.ahbn-textarea:focus {
+			border-color: #0a192f !important;
+			box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.1) !important;
+		}
+
+		.ahbn-btn-search {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			background: #0a192f;
+			color: #ffffff;
+			border: 1px solid #0a192f;
+			padding: 0 16px;
+			height: 38px;
+			border-radius: 8px;
+			font-size: 13px;
 			font-weight: 700;
-			color: #64748b;
-			text-transform: uppercase;
-			letter-spacing: 0.05em;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+		.ahbn-btn-search:hover {
+			background: #c5a880;
+			border-color: #c5a880;
+			color: #0a192f;
 		}
 
 		.ahbn-clear-filters {
@@ -382,17 +485,18 @@ function ahbn_staff_tab() {
 		}
 
 		.ahbn-emp-avatar {
-			width: 36px;
-			height: 36px;
+			width: 38px;
+			height: 38px;
 			border-radius: 50%;
-			background: #f1f5f9;
-			border: 1px solid #e2e8f0;
+			background: #0a192f;
+			border: 1px solid #040914;
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			font-weight: 800;
-			color: #0a192f;
+			color: #c5a880;
 			font-size: 13px;
+			flex-shrink: 0;
 		}
 
 		.ahbn-emp-name {
@@ -430,7 +534,7 @@ function ahbn_staff_tab() {
 			font-size: 14px;
 			width: 14px;
 			height: 14px;
-			color: #94a3b8;
+			color: #c5a880;
 			vertical-align: middle;
 			margin-right: 3px;
 		}
@@ -447,6 +551,7 @@ function ahbn_staff_tab() {
 			border-radius: 9999px;
 			font-size: 11px;
 			font-weight: 700;
+			text-transform: uppercase;
 		}
 
 		.status-active   { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
@@ -511,7 +616,7 @@ function ahbn_staff_tab() {
 
 		.ahbn-panel-head h2 {
 			margin: 0;
-			font-size: 14px;
+			font-size: 13px;
 			font-weight: 800;
 			text-transform: uppercase;
 			letter-spacing: 0.05em;
@@ -546,26 +651,6 @@ function ahbn_staff_tab() {
 			color: #334155;
 		}
 
-		.ahbn-input,
-		.ahbn-select,
-		.ahbn-textarea {
-			width: 100%;
-			border: 1px solid #cbd5e1 !important;
-			border-radius: 8px !important;
-			padding: 8px 12px !important;
-			font-size: 13px !important;
-			background: #ffffff !important;
-			color: #0f172a !important;
-			box-shadow: none !important;
-		}
-
-		.ahbn-input:focus,
-		.ahbn-select:focus,
-		.ahbn-textarea:focus {
-			border-color: #0a192f !important;
-			box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.1) !important;
-		}
-
 		.ahbn-panel-footer {
 			padding: 16px 24px;
 			background: #f8fafc;
@@ -595,6 +680,9 @@ function ahbn_staff_tab() {
 		}
 
 		.ahbn-btn-save {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
 			padding: 9px 20px;
 			background: #0a192f;
 			border: 1px solid #0a192f;
@@ -606,9 +694,20 @@ function ahbn_staff_tab() {
 			transition: all 0.2s ease;
 		}
 
+		.ahbn-btn-save .dashicons {
+			font-size: 17px;
+			width: 17px;
+			height: 17px;
+			color: #c5a880;
+		}
+
 		.ahbn-btn-save:hover {
 			background: #c5a880;
 			border-color: #c5a880;
+			color: #0a192f;
+		}
+
+		.ahbn-btn-save:hover .dashicons {
 			color: #0a192f;
 		}
 
@@ -738,6 +837,7 @@ function ahbn_staff_tab() {
 							<?php esc_html_e( 'Cancel', 'awesome-hotel-booking' ); ?>
 						</a>
 						<button type="submit" name="ahbn_save_staff" class="ahbn-btn-save">
+							<span class="dashicons dashicons-saved" aria-hidden="true"></span>
 							<?php echo $edit_member ? esc_html__( 'Update Staff Member', 'awesome-hotel-booking' ) : esc_html__( 'Save Staff Member', 'awesome-hotel-booking' ); ?>
 						</button>
 					</div>
@@ -782,11 +882,18 @@ function ahbn_staff_tab() {
 				<input type="hidden" name="tab" value="staff">
 
 				<div class="ahbn-filter-controls">
-					<div class="ahbn-filter-field">
-						<label for="ahbn_filter_role" class="ahbn-filter-label">
-							<?php esc_html_e( 'Department:', 'awesome-hotel-booking' ); ?>
-						</label>
-						<select name="filter_role" id="ahbn_filter_role" class="ahbn-select" onchange="this.form.submit();">
+					<div class="ahbn-search-field">
+						<input 
+							type="text" 
+							name="s" 
+							class="ahbn-input" 
+							placeholder="<?php esc_attr_e( 'Search by employee name, phone, or email...', 'awesome-hotel-booking' ); ?>"
+							value="<?php echo esc_attr( $search_query ); ?>"
+						>
+					</div>
+
+					<div style="min-width: 180px;">
+						<select name="filter_role" class="ahbn-select" onchange="this.form.submit();">
 							<option value=""><?php esc_html_e( 'All Departments', 'awesome-hotel-booking' ); ?></option>
 							<?php foreach ( $roles_map as $r_key => $r_label ) : ?>
 								<option value="<?php echo esc_attr( $r_key ); ?>" <?php selected( $filter_role, $r_key ); ?>>
@@ -796,11 +903,8 @@ function ahbn_staff_tab() {
 						</select>
 					</div>
 
-					<div class="ahbn-filter-field">
-						<label for="ahbn_filter_status" class="ahbn-filter-label">
-							<?php esc_html_e( 'Status:', 'awesome-hotel-booking' ); ?>
-						</label>
-						<select name="filter_status" id="ahbn_filter_status" class="ahbn-select" onchange="this.form.submit();">
+					<div style="min-width: 150px;">
+						<select name="filter_status" class="ahbn-select" onchange="this.form.submit();">
 							<option value=""><?php esc_html_e( 'All Statuses', 'awesome-hotel-booking' ); ?></option>
 							<option value="active" <?php selected( $filter_status, 'active' ); ?>><?php esc_html_e( 'Active', 'awesome-hotel-booking' ); ?></option>
 							<option value="leave" <?php selected( $filter_status, 'leave' ); ?>><?php esc_html_e( 'On Leave', 'awesome-hotel-booking' ); ?></option>
@@ -808,9 +912,14 @@ function ahbn_staff_tab() {
 						</select>
 					</div>
 
-					<?php if ( ! empty( $filter_role ) || ! empty( $filter_status ) ) : ?>
+					<button type="submit" class="ahbn-btn-search">
+						<span class="dashicons dashicons-search" aria-hidden="true"></span>
+						<?php esc_html_e( 'Filter', 'awesome-hotel-booking' ); ?>
+					</button>
+
+					<?php if ( ! empty( $filter_role ) || ! empty( $filter_status ) || ! empty( $search_query ) ) : ?>
 						<a href="<?php echo esc_url( $base_staff_url ); ?>" class="ahbn-clear-filters">
-							<?php esc_html_e( 'Clear Filter', 'awesome-hotel-booking' ); ?>
+							<?php esc_html_e( 'Reset Filters', 'awesome-hotel-booking' ); ?>
 						</a>
 					<?php endif; ?>
 				</div>
@@ -912,14 +1021,14 @@ function ahbn_staff_tab() {
 									</td>
 									<td style="text-align: right;">
 										<div class="ahbn-action-btns">
-											<a href="<?php echo esc_url( $edit_link ); ?>" class="ahbn-quick-btn" title="<?php esc_attr_e( 'Edit Staff', 'awesome-hotel-booking' ); ?>">
+											<a href="<?php echo esc_url( $edit_link ); ?>" class="ahbn-quick-btn" title="<?php esc_attr_e( 'Edit Staff Member', 'awesome-hotel-booking' ); ?>">
 												<span class="dashicons dashicons-edit" aria-hidden="true"></span>
 											</a>
 
 											<form method="post" action="<?php echo esc_url( $base_staff_url ); ?>" style="display: inline-block; margin: 0;" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to remove this staff record?', 'awesome-hotel-booking' ) ); ?>');">
 												<?php wp_nonce_field( 'ahbn_delete_staff_action', 'ahbn_del_staff_nonce' ); ?>
 												<input type="hidden" name="del_staff_id" value="<?php echo esc_attr( (string) $member->id ); ?>">
-												<button type="submit" name="ahbn_delete_staff" class="ahbn-quick-btn is-delete" title="<?php esc_attr_e( 'Delete Staff', 'awesome-hotel-booking' ); ?>">
+												<button type="submit" name="ahbn_delete_staff" class="ahbn-quick-btn is-delete" title="<?php esc_attr_e( 'Delete Staff Member', 'awesome-hotel-booking' ); ?>">
 													<span class="dashicons dashicons-trash" aria-hidden="true"></span>
 												</button>
 											</form>

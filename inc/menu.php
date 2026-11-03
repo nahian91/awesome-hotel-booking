@@ -28,21 +28,21 @@ function ahbn_register_admin_menu() {
 add_action( 'admin_menu', 'ahbn_register_admin_menu' );
 
 /**
- * Retrieve organized admin menu definitions.
+ * Retrieve organized admin menu definitions with simple, direct names.
  *
  * @return array
  */
 function ahbn_get_admin_menu_groups() {
 	return array(
 		'operations' => array(
-			'title' => __( 'Operations & Front Desk', 'awesome-hotel-booking' ),
+			'title' => __( 'Operations', 'awesome-hotel-booking' ),
 			'items' => array(
 				'dashboard'    => array(
 					'label' => __( 'Dashboard', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-performance',
 				),
 				'calendar'     => array(
-					'label' => __( 'Calendar Matrix', 'awesome-hotel-booking' ),
+					'label' => __( 'Calendar', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-calendar',
 				),
 				'bookings'     => array(
@@ -54,20 +54,20 @@ function ahbn_get_admin_menu_groups() {
 					'icon'  => 'dashicons-forms',
 				),
 				'staff'        => array(
-					'label' => __( 'Hotel Staff', 'awesome-hotel-booking' ),
+					'label' => __( 'Staff', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-id-alt',
 				),
 			),
 		),
 		'inventory'  => array(
-			'title' => __( 'Inventory & Yield', 'awesome-hotel-booking' ),
+			'title' => __( 'Inventory', 'awesome-hotel-booking' ),
 			'items' => array(
 				'rooms'          => array(
-					'label' => __( 'Rooms & Suites', 'awesome-hotel-booking' ),
+					'label' => __( 'Rooms', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-building',
 				),
 				'pricing'        => array(
-					'label' => __( 'Rates & Seasons', 'awesome-hotel-booking' ),
+					'label' => __( 'Pricing', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-money-alt',
 				),
 				'coupons'        => array(
@@ -75,46 +75,59 @@ function ahbn_get_admin_menu_groups() {
 					'icon'  => 'dashicons-tickets-alt',
 				),
 				'extra_services' => array(
-					'label' => __( 'Add-ons & Extras', 'awesome-hotel-booking' ),
+					'label' => __( 'Services', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-coffee',
 				),
 			),
 		),
 		'finance'    => array(
-			'title' => __( 'Finance & CRM', 'awesome-hotel-booking' ),
+			'title' => __( 'Finance & Guests', 'awesome-hotel-booking' ),
 			'items' => array(
 				'expense'   => array(
 					'label' => __( 'Expenses', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-chart-pie',
 				),
 				'reports'   => array(
-					'label' => __( 'Financial Reports', 'awesome-hotel-booking' ),
+					'label' => __( 'Reports', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-chart-bar',
 				),
 				'customers' => array(
-					'label' => __( 'Guest Directory', 'awesome-hotel-booking' ),
+					'label' => __( 'Guests', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-groups',
 				),
 			),
 		),
-		'growth'     => array(
-			'title' => __( 'Growth & Customization', 'awesome-hotel-booking' ),
+		'settings_group' => array(
+			'title' => __( 'Settings', 'awesome-hotel-booking' ),
 			'items' => array(
 				'seo'       => array(
-					'label' => __( 'SEO & Metadata', 'awesome-hotel-booking' ),
+					'label' => __( 'SEO', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-search',
 				),
 				'styling'   => array(
-					'label' => __( 'Design & Styling', 'awesome-hotel-booking' ),
+					'label' => __( 'Design', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-art',
 				),
 				'settings'  => array(
-					'label' => __( 'General Settings', 'awesome-hotel-booking' ),
+					'label' => __( 'Settings', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-admin-generic',
 				),
 				'shortcode' => array(
 					'label' => __( 'Shortcodes', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-editor-code',
+				),
+			),
+		),
+		'builders'   => array(
+			'title' => __( 'Builders', 'awesome-hotel-booking' ),
+			'items' => array(
+				'elementor' => array(
+					'label' => __( 'Elementor', 'awesome-hotel-booking' ),
+					'icon'  => 'dashicons-welcome-widgets-menus',
+				),
+				'blocks'    => array(
+					'label' => __( 'Blocks', 'awesome-hotel-booking' ),
+					'icon'  => 'dashicons-block-default',
 				),
 			),
 		),
@@ -143,7 +156,7 @@ function ahbn_main_page() {
 			display: flex;
 			gap: 24px;
 			align-items: flex-start;
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+			font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 			color: #0f172a;
 		}
 
@@ -153,8 +166,8 @@ function ahbn_main_page() {
 
 		/* Non-sticky, Natural Height Sidebar */
 		.ahbn-sidebar-container {
-			flex: 0 0 260px;
-			width: 260px;
+			flex: 0 0 240px;
+			width: 240px;
 			background: #ffffff;
 			border: 1px solid #e2e8f0;
 			border-radius: 16px;
@@ -166,7 +179,7 @@ function ahbn_main_page() {
 
 		/* Brand Header */
 		.ahbn-brand-header {
-			padding: 22px 18px;
+			padding: 20px 18px;
 			background: linear-gradient(135deg, #07111e 0%, #0a192f 100%);
 			border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 			border-radius: 15px 15px 0 0;
@@ -197,7 +210,7 @@ function ahbn_main_page() {
 		}
 
 		.ahbn-brand-header .version-tag {
-			font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+			font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
 			background: rgba(197, 168, 128, 0.16);
 			color: #c5a880;
 			border: 1px solid rgba(197, 168, 128, 0.3);
@@ -208,16 +221,16 @@ function ahbn_main_page() {
 			letter-spacing: 0.5px;
 		}
 
-		/* Normal Flow List Container - No Max-Height, No Overflow */
+		/* Normal Flow List Container */
 		.ahbn-nav-scroll-wrapper {
-			padding: 14px 10px 20px;
+			padding: 14px 10px 18px;
 			max-height: none !important;
 			overflow: visible !important;
 		}
 
 		/* Section Headings */
 		.ahbn-menu-section-group {
-			margin-bottom: 18px;
+			margin-bottom: 16px;
 		}
 
 		.ahbn-menu-section-group:last-child {
@@ -242,7 +255,7 @@ function ahbn_main_page() {
 		}
 
 		.ahbn-left-tabs li {
-			margin: 0 0 3px 0 !important;
+			margin: 0 0 2px 0 !important;
 		}
 
 		.ahbn-left-tabs li a {
@@ -305,7 +318,7 @@ function ahbn_main_page() {
 			background: #ffffff;
 			border: 1px solid #e2e8f0;
 			border-radius: 16px;
-			padding: 32px;
+			padding: 28px;
 			box-shadow: 0 4px 20px -2px rgba(10, 20, 38, 0.05);
 		}
 
@@ -345,7 +358,7 @@ function ahbn_main_page() {
 							<span class="dashicons dashicons-building" aria-hidden="true"></span>
 							<span><?php esc_html_e( 'Hotel Booking', 'awesome-hotel-booking' ); ?></span>
 						</span>
-						<span class="version-tag"><?php echo esc_html( 'v' . AHBN_VERSION ); ?></span>
+						<span class="version-tag"><?php echo esc_html( 'v' . ( defined( 'AHBN_VERSION' ) ? AHBN_VERSION : '1.0.0' ) ); ?></span>
 					</h2>
 				</div>
 
@@ -400,7 +413,7 @@ function ahbn_main_page() {
 					if ( function_exists( 'ahbn_calendar_tab' ) ) {
 						ahbn_calendar_tab();
 					} else {
-						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Calendar Matrix module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
+						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Calendar module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
 					}
 					break;
 
@@ -428,7 +441,7 @@ function ahbn_main_page() {
 					if ( function_exists( 'ahbn_pricing_tab' ) ) {
 						ahbn_pricing_tab();
 					} else {
-						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Rates & Seasons module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
+						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Pricing module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
 					}
 					break;
 
@@ -451,7 +464,7 @@ function ahbn_main_page() {
 					} elseif ( function_exists( 'ahbn_extra_services_tab' ) ) {
 						ahbn_extra_services_tab();
 					} else {
-						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Add-ons & Extra Services module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
+						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Services module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
 					}
 					break;
 
@@ -459,7 +472,7 @@ function ahbn_main_page() {
 					if ( function_exists( 'ahbn_staff_tab' ) ) {
 						ahbn_staff_tab();
 					} else {
-						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Hotel Staff module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
+						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Staff module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
 					}
 					break;
 
@@ -485,7 +498,7 @@ function ahbn_main_page() {
 					if ( function_exists( 'ahbn_seo_tab' ) ) {
 						ahbn_seo_tab();
 					} else {
-						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'SEO & Schema Markup module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
+						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'SEO module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
 					}
 					break;
 
@@ -493,7 +506,7 @@ function ahbn_main_page() {
 					if ( function_exists( 'ahbn_styling_tab' ) ) {
 						ahbn_styling_tab();
 					} else {
-						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Design & Styling Customizer is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
+						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Design module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
 					}
 					break;
 
@@ -506,6 +519,28 @@ function ahbn_main_page() {
 				case 'shortcode':
 					if ( function_exists( 'ahbn_shortcode_tab' ) ) {
 						ahbn_shortcode_tab();
+					}
+					break;
+
+				case 'elementor':
+					$elementor_file = defined( 'AHBN_PATH' ) ? AHBN_PATH . 'admin/builders/elementor-settings.php' : plugin_dir_path( __FILE__ ) . 'builders/elementor-settings.php';
+					if ( file_exists( $elementor_file ) ) {
+						require_once $elementor_file;
+					}
+
+					if ( function_exists( 'ahbn_elementor_settings_tab' ) ) {
+						ahbn_elementor_settings_tab();
+					}
+					break;
+
+				case 'blocks':
+					$blocks_file = defined( 'AHBN_PATH' ) ? AHBN_PATH . 'admin/builders/gutenberg-settings.php' : plugin_dir_path( __FILE__ ) . 'builders/gutenberg-settings.php';
+					if ( file_exists( $blocks_file ) ) {
+						require_once $blocks_file;
+					}
+
+					if ( function_exists( 'ahbn_gutenberg_settings_tab' ) ) {
+						ahbn_gutenberg_settings_tab();
 					}
 					break;
 

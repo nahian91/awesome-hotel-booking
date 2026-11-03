@@ -3,7 +3,8 @@
  * Shortcode Documentation & Library Tab View.
  *
  * Built with Champagne Gold & Deep Navy enterprise UI system.
- * Features: One-click clipboard copy, placement guidance, and organized shortcode groups.
+ * Features: Multi-tiered cross-browser clipboard copy, visual toast confirmation,
+ * button state feedback, and structured shortcode directory.
  *
  * @package AwesomeHotelBooking
  */
@@ -25,49 +26,55 @@ function ahbn_shortcode_tab() {
 	$sections = array(
 		'Header & Navigation' => array(
 			array(
-				'title' => __( 'Header Auth Button', 'awesome-hotel-booking' ),
+				'title' => __( 'Header Auth & Profile Button', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_header_auth]',
-				'desc'  => __( 'Displays guest greeting and avatar for logged-in users, or Login/Register buttons for visitors.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Displays guest greeting, account balance, and avatar for logged-in users, or Login/Register modal triggers for visitors.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Site Header / Navigation Bar', 'awesome-hotel-booking' ),
 			),
 		),
-		'Booking Flow'        => array(
+		'Booking & Reservation Flow' => array(
 			array(
-				'title' => __( 'Search & Reservation Form', 'awesome-hotel-booking' ),
+				'title' => __( 'Search & Reservation Filter Bar', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_search_form]',
-				'desc'  => __( 'Booking search form for check-in/out dates and guest counts. Ideal for homepage hero sections.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Horizontal or stacked search widget for check-in/out dates, room type dropdowns, and guest counters.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Home Page / Hero Section', 'awesome-hotel-booking' ),
 			),
 			array(
-				'title' => __( 'All Rooms Directory', 'awesome-hotel-booking' ),
+				'title' => __( 'All Rooms Directory Grid', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_all_rooms]',
-				'desc'  => __( 'Displays full room inventory in an interactive responsive grid with category filters.', 'awesome-hotel-booking' ),
-				'page'  => __( 'Rooms / Inventory Page', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Displays published room inventory in an interactive responsive grid with live category filters, pricing, and booking buttons.', 'awesome-hotel-booking' ),
+				'page'  => __( 'Rooms / Suites Archive Page', 'awesome-hotel-booking' ),
 			),
 			array(
-				'title' => __( 'Booking Confirmation', 'awesome-hotel-booking' ),
+				'title' => __( 'Single Room Booking Card', 'awesome-hotel-booking' ),
+				'code'  => '[ahbn_room_card id="1"]',
+				'desc'  => __( 'Embeds a dedicated reservation card for a specific suite. Replace "1" with your database room ID.', 'awesome-hotel-booking' ),
+				'page'  => __( 'Custom Landing Pages / Blog Posts', 'awesome-hotel-booking' ),
+			),
+			array(
+				'title' => __( 'Checkout & Reservation Confirmation', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_thanks]',
-				'desc'  => __( 'Displays reservation confirmation and order summary details after a successful checkout.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Displays reservation confirmation, booking code, check-in dates, and printable invoice summary upon successful booking.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Thank You / Confirmation Page', 'awesome-hotel-booking' ),
 			),
 		),
-		'User & Authentication' => array(
+		'Guest CRM & Authentication' => array(
 			array(
-				'title' => __( 'Guest Login Form', 'awesome-hotel-booking' ),
+				'title' => __( 'Guest Login Portal', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_login]',
-				'desc'  => __( 'AJAX-powered guest login form that automatically redirects to the customer account dashboard.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'AJAX-powered customer login form that validates credentials and redirects to the account dashboard.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Login Page', 'awesome-hotel-booking' ),
 			),
 			array(
-				'title' => __( 'Guest Registration', 'awesome-hotel-booking' ),
+				'title' => __( 'Guest Registration Portal', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_register]',
-				'desc'  => __( 'Registration form with telephone and contact fields that auto-authenticates the guest.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Member sign-up form with contact verification, automated role assignment, and CRM synchronization.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Registration Page', 'awesome-hotel-booking' ),
 			),
 			array(
-				'title' => __( 'Guest Account Dashboard', 'awesome-hotel-booking' ),
+				'title' => __( 'Customer Dashboard & History', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_account]',
-				'desc'  => __( 'Central hub where customers manage personal profile details and review past room stays.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Self-service guest portal where clients view upcoming bookings, stay invoices, and edit profile details.', 'awesome-hotel-booking' ),
 				'page'  => __( 'My Account Page', 'awesome-hotel-booking' ),
 			),
 		),
@@ -80,7 +87,7 @@ function ahbn_shortcode_tab() {
 			<div>
 				<h2 class="ahbn-shortcode-title"><?php esc_html_e( 'Shortcode Library & Deployment', 'awesome-hotel-booking' ); ?></h2>
 				<p class="ahbn-shortcode-subtitle">
-					<?php esc_html_e( 'Deploy booking forms, room galleries, guest dashboards, and header elements anywhere on your site.', 'awesome-hotel-booking' ); ?>
+					<?php esc_html_e( 'Deploy booking engines, inventory grids, customer dashboards, and header elements into any page or theme template.', 'awesome-hotel-booking' ); ?>
 				</p>
 			</div>
 			<div>
@@ -122,9 +129,7 @@ function ahbn_shortcode_tab() {
 
 							<div class="ahbn-card-bottom">
 								<div class="ahbn-code-display-box">
-									<code class="ahbn-code-text" id="code-<?php echo esc_attr( $sc_id ); ?>">
-										<?php echo esc_html( $sc['code'] ); ?>
-									</code>
+									<code class="ahbn-code-text" id="code-<?php echo esc_attr( $sc_id ); ?>"><?php echo esc_html( $sc['code'] ); ?></code>
 									<button 
 										type="button" 
 										class="ahbn-copy-action-btn js-ahbn-copy" 
@@ -150,7 +155,7 @@ function ahbn_shortcode_tab() {
 		<?php endforeach; ?>
 	</div>
 
-	<!-- Toast Alert for Copy Confirmation -->
+	<!-- Floating Toast Alert for Copy Confirmation -->
 	<div id="ahbn-toast" class="ahbn-copy-toast" role="alert" aria-live="polite">
 		<span class="dashicons dashicons-yes-alt" aria-hidden="true"></span>
 		<span><?php esc_html_e( 'Shortcode copied to clipboard!', 'awesome-hotel-booking' ); ?></span>
@@ -297,10 +302,10 @@ function ahbn_shortcode_tab() {
 		}
 
 		.ahbn-code-text {
-			font-family: 'JetBrains Mono', monospace;
-			font-size: 13px;
-			font-weight: 700;
-			color: #0a192f;
+			font-family: 'JetBrains Mono', monospace !important;
+			font-size: 13px !important;
+			font-weight: 700 !important;
+			color: #0a192f !important;
 			background: transparent !important;
 			border: none !important;
 			padding: 0 !important;
@@ -309,12 +314,12 @@ function ahbn_shortcode_tab() {
 		.ahbn-copy-action-btn {
 			display: inline-flex;
 			align-items: center;
-			gap: 4px;
+			gap: 5px;
 			background: #ffffff;
 			border: 1px solid #cbd5e1;
 			color: #334155;
 			border-radius: 6px;
-			padding: 4px 10px;
+			padding: 5px 10px;
 			font-size: 11px;
 			font-weight: 700;
 			cursor: pointer;
@@ -322,9 +327,9 @@ function ahbn_shortcode_tab() {
 		}
 
 		.ahbn-copy-action-btn .dashicons {
-			font-size: 13px;
-			width: 13px;
-			height: 13px;
+			font-size: 14px;
+			width: 14px;
+			height: 14px;
 		}
 
 		.ahbn-copy-action-btn:hover {
@@ -396,33 +401,80 @@ function ahbn_shortcode_tab() {
 
 	<script>
 	jQuery(document).ready(function($) {
-		$('.js-ahbn-copy').on('click', function(e) {
+		$('.js-ahbn-copy').off('click').on('click', function(e) {
 			e.preventDefault();
-			const targetId = $(this).data('target');
-			const $target = $('#' + targetId);
+
+			var targetId = $(this).data('target');
+			var $target  = $('#' + targetId);
+			var $btn     = $(this);
+
 			if (!$target.length) {
 				return;
 			}
 
-			const text = $target.text().trim();
+			var textToCopy = $target.text().trim();
 
+			// Method 1: Modern Async Clipboard API (for HTTPS or localhost)
 			if (navigator.clipboard && window.isSecureContext) {
-				navigator.clipboard.writeText(text).then(showToast);
+				navigator.clipboard.writeText(textToCopy).then(function() {
+					triggerCopyFeedback($btn);
+				}).catch(function() {
+					fallbackCopy(textToCopy, $btn);
+				});
 			} else {
-				// Fallback for non-HTTPS local development environments.
-				const $temp = $('<textarea>');
-				$('body').append($temp);
-				$temp.val(text).select();
-				document.execCommand('copy');
-				$temp.remove();
-				showToast();
-			}
-
-			function showToast() {
-				const $toast = $('#ahbn-toast');
-				$toast.css('display', 'inline-flex').hide().fadeIn(150).delay(2200).fadeOut(250);
+				// Method 2: Synchronous DOM fallback for HTTP/local IPs
+				fallbackCopy(textToCopy, $btn);
 			}
 		});
+
+		function fallbackCopy(text, $btn) {
+			var textArea = document.createElement('textarea');
+			textArea.value = text;
+			textArea.style.position = 'fixed';
+			textArea.style.top = '-9999px';
+			textArea.style.left = '-9999px';
+			textArea.style.opacity = '0';
+			textArea.setAttribute('readonly', '');
+
+			document.body.appendChild(textArea);
+			textArea.focus();
+			textArea.select();
+
+			try {
+				var successful = document.execCommand('copy');
+				if (successful) {
+					triggerCopyFeedback($btn);
+				}
+			} catch (err) {
+				// Silent fail
+			}
+
+			document.body.removeChild(textArea);
+		}
+
+		function triggerCopyFeedback($btn) {
+			// Toast Animation
+			var $toast = $('#ahbn-toast');
+			if ($toast.length) {
+				$toast.stop(true, true).css('display', 'inline-flex').hide().fadeIn(150).delay(2000).fadeOut(250);
+			}
+
+			// In-button temporary visual feedback
+			var $label = $btn.find('.ahbn-copy-btn-label');
+			var originalText = $label.text();
+
+			$btn.css({
+				'background': '#059669',
+				'border-color': '#059669',
+				'color': '#ffffff'
+			});
+			$label.text('<?php echo esc_js( __( 'Copied!', 'awesome-hotel-booking' ) ); ?>');
+
+			setTimeout(function() {
+				$label.text(originalText);
+				$btn.removeAttr('style');
+			}, 1800);
+		}
 	});
 	</script>
 	<?php

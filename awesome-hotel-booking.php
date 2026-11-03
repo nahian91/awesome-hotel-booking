@@ -93,7 +93,6 @@ $ahbn_includes = array(
 	'admin/rooms.php',
 	'admin/bookings.php',
 	'admin/housekeeping.php',
-	'admin/pricing.php',
 	'admin/coupons.php',
 	'admin/extra-services.php',
 	'admin/staff.php',
@@ -115,7 +114,151 @@ foreach ( $ahbn_includes as $ahbn_file ) {
 }
 
 /*--------------------------------------------------------------
-# 5. Activation & Setup Routines
+# 5. Icon-Only Full-Screen Canvas & Toggle Routine
+--------------------------------------------------------------*/
+/**
+ * Inject Icon-Only Full-Screen Toggle on AHBN Admin Pages.
+ *
+ * @param string $hook_suffix Current admin page hook.
+ * @return void
+ */
+function ahbn_admin_fullscreen_canvas( $hook_suffix ) {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended
+	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+	if ( false === strpos( $page, 'awesome_hotel_booking' ) ) {
+		return;
+	}
+
+	$is_fullscreen = (bool) get_option( 'ahbn_admin_fullscreen', 0 );
+	?>
+	<style id="ahbn-fullscreen-styles">
+		/* Icon-Only Floating Toggle Button */
+		.ahbn-fs-icon-btn {
+			position: fixed;
+			top: 38px;
+			right: 25px;
+			z-index: 999999;
+			width: 36px;
+			height: 36px;
+			background: #0a192f;
+			color: #c5a880 !important;
+			border: 1px solid #c5a880;
+			border-radius: 8px;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0;
+			box-shadow: 0 4px 12px rgba(10, 25, 47, 0.25);
+			transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.ahbn-fs-icon-btn:hover {
+			background: #c5a880;
+			color: #0a192f !important;
+			transform: scale(1.05);
+		}
+		.ahbn-fs-icon-btn .dashicons {
+			font-size: 18px;
+			width: 18px;
+			height: 18px;
+			line-height: 1;
+		}
+
+		/* Fullscreen Mode Overrides */
+		body.ahbn-fullscreen-mode #adminmenumain,
+		body.ahbn-fullscreen-mode #wpadminbar,
+		body.ahbn-fullscreen-mode #wpfooter {
+			display: none !important;
+		}
+		body.ahbn-fullscreen-mode #wpcontent,
+		body.ahbn-fullscreen-mode #wpbody-content {
+			margin-left: 0 !important;
+			padding: 24px 32px !important;
+			width: 100vw !important;
+			min-height: 100vh !important;
+			box-sizing: border-box !important;
+		}
+		body.ahbn-fullscreen-mode html.wp-toolbar {
+			padding-top: 0 !important;
+		}
+		body.ahbn-fullscreen-mode .ahbn-fs-icon-btn {
+			top: 18px;
+			right: 25px;
+		}
+	</style>
+
+	<script type="text/javascript">
+	(function($) {
+		$(document).ready(function() {
+			const isFs = <?php echo $is_fullscreen ? 'true' : 'false'; ?>;
+			if (isFs) {
+				$('body').addClass('ahbn-fullscreen-mode');
+			}
+
+			const isNowFs = $('body').hasClass('ahbn-fullscreen-mode');
+			const iconClass = isNowFs ? 'dashicons-fullscreen-exit-alt' : 'dashicons-fullscreen-alt';
+			const tooltipText = isNowFs 
+				? '<?php echo esc_js( __( 'Exit Fullscreen', 'awesome-hotel-booking' ) ); ?>' 
+				: '<?php echo esc_js( __( 'Enter Fullscreen', 'awesome-hotel-booking' ) ); ?>';
+
+			const $btn = $('<button/>', {
+				type: 'button',
+				class: 'ahbn-fs-icon-btn',
+				title: tooltipText,
+				'aria-label': tooltipText,
+				html: '<span class="dashicons ' + iconClass + '" aria-hidden="true"></span>'
+			}).appendTo('body');
+
+			$btn.on('click', function(e) {
+				e.preventDefault();
+				$('body').toggleClass('ahbn-fullscreen-mode');
+				const active = $('body').hasClass('ahbn-fullscreen-mode') ? 1 : 0;
+
+				const nextIcon = active ? 'dashicons-fullscreen-exit-alt' : 'dashicons-fullscreen-alt';
+				const nextTooltip = active 
+					? '<?php echo esc_js( __( 'Exit Fullscreen', 'awesome-hotel-booking' ) ); ?>' 
+					: '<?php echo esc_js( __( 'Enter Fullscreen', 'awesome-hotel-booking' ) ); ?>';
+
+				$btn.attr('title', nextTooltip)
+					.attr('aria-label', nextTooltip)
+					.html('<span class="dashicons ' + nextIcon + '" aria-hidden="true"></span>');
+
+				// Persist preference via AJAX
+				$.post(ajaxurl, {
+					action: 'ahbn_save_fullscreen_pref',
+					status: active,
+					security: '<?php echo esc_js( wp_create_nonce( 'ahbn_fs_nonce' ) ); ?>'
+				});
+			});
+		});
+	})(jQuery);
+	</script>
+	<?php
+}
+add_action( 'admin_head', 'ahbn_admin_fullscreen_canvas' );
+
+/**
+ * Handle AJAX request to store full-screen preference.
+ *
+ * @return void
+ */
+function ahbn_save_fullscreen_preference() {
+	check_ajax_referer( 'ahbn_fs_nonce', 'security' );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( esc_html__( 'Unauthorized', 'awesome-hotel-booking' ) );
+	}
+
+	$status = isset( $_POST['status'] ) ? absint( $_POST['status'] ) : 0;
+	update_option( 'ahbn_admin_fullscreen', $status );
+	wp_send_json_success( array( 'fullscreen' => $status ) );
+}
+add_action( 'wp_ajax_ahbn_save_fullscreen_pref', 'ahbn_save_fullscreen_preference' );
+
+/*--------------------------------------------------------------
+# 6. Activation & Setup Routines
 --------------------------------------------------------------*/
 /**
  * Setup default pages with shortcodes.

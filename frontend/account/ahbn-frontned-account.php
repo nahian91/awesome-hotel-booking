@@ -2,6 +2,9 @@
 /**
  * [ahbn_account] Guest Customer Account Portal Shortcode.
  *
+ * Rewritten for custom SQL database tables:
+ * {$wpdb->prefix}ahbn_bookings joined with {$wpdb->prefix}ahbn_rooms.
+ *
  * @package AwesomeHotelBooking
  */
 
@@ -29,18 +32,19 @@ function ahbn_account_shortcode_callback() {
 			</a>
 		</div>
 		<style>
-			.ahbn-auth-locked { max-width: 450px; margin: 80px auto; text-align: center; background: #fff; padding: 50px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-			.ahbn-lock-icon { font-size: 50px; margin-bottom: 20px; }
-			.ahbn-login-btn-link { display: inline-block; background: #0f172a; color: #fff; padding: 14px 30px; border-radius: 10px; text-decoration: none; font-weight: 700; margin-top: 20px; transition: 0.3s; }
-			.ahbn-login-btn-link:hover { background: #bf9441; color: #fff; }
+			.ahbn-auth-locked { max-width: 450px; margin: 80px auto; text-align: center; background: #fff; padding: 50px; border-radius: 20px; box-shadow: 0 20px 40px rgba(10,25,47,0.06); border: 1px solid #e2e8f0; font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+			.ahbn-lock-icon { font-size: 42px; margin-bottom: 20px; }
+			.ahbn-login-btn-link { display: inline-block; background: #0a192f; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; margin-top: 20px; transition: 0.3s; }
+			.ahbn-login-btn-link:hover { background: #c5a880; color: #0a192f; }
 		</style>
 		<?php
 		return ob_get_clean();
 	}
 
-	$current_user   = wp_get_current_user();
-	$user_id        = $current_user->ID;
-	$user_email     = sanitize_email( $current_user->user_email );
+	global $wpdb;
+	$current_user    = wp_get_current_user();
+	$user_id         = (int) $current_user->ID;
+	$user_email      = sanitize_email( $current_user->user_email );
 	$ahbn_status_msg = '';
 
 	// 2. Profile & Security Updates.
@@ -77,53 +81,44 @@ function ahbn_account_shortcode_callback() {
 				$ahbn_status_msg = '<div class="ahbn-alert success">' . esc_html__( 'Profile updated successfully.', 'awesome-hotel-booking' ) . '</div>';
 			}
 
-			// Refresh user object after meta update.
+			// Refresh user object and clear transient cache.
 			$current_user = wp_get_current_user();
+			delete_transient( 'ahbn_user_bookings_' . $user_id );
 		} else {
 			$ahbn_status_msg = '<div class="ahbn-alert error">' . esc_html__( 'Security verification failed. Please try again.', 'awesome-hotel-booking' ) . '</div>';
 		}
 	}
 
-	// 3. Data Fetch: User Bookings.
+	// 3. Data Fetch: User Bookings from Custom Tables.
 	$cache_key     = 'ahbn_user_bookings_' . $user_id;
 	$ahbn_bookings = get_transient( $cache_key );
 
 	if ( false === $ahbn_bookings ) {
-		$args = array(
-			'post_type'              => 'ahbn_booking',
-			'posts_per_page'         => -1,
-			'post_status'            => 'publish',
-			'no_found_rows'          => true,
-			'update_post_term_cache' => false,
-			'meta_query'             => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-				'relation' => 'OR',
-				array(
-					'key'     => 'user_id',
-					'value'   => $user_id,
-					'compare' => '=',
-				),
-				array(
-					'key'     => 'ahbn_book_email',
-					'value'   => $user_email,
-					'compare' => '=',
-				),
-			),
-			'orderby'                => 'date',
-			'order'                  => 'DESC',
-		);
+		$table_bookings = $wpdb->prefix . 'ahbn_bookings';
+		$table_rooms    = $wpdb->prefix . 'ahbn_rooms';
 
-		$query         = new WP_Query( $args );
-		$ahbn_bookings = $query->posts;
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$ahbn_bookings = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT b.*, r.room_number, r.title AS room_title, r.room_type, r.thumbnail_id
+				 FROM {$table_bookings} b
+				 LEFT JOIN {$table_rooms} r ON b.room_id = r.id
+				 WHERE b.user_id = %d OR b.guest_email = %s
+				 ORDER BY b.checkin_date DESC, b.id DESC",
+				$user_id,
+				$user_email
+			)
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		set_transient( $cache_key, $ahbn_bookings, 12 * HOUR_IN_SECONDS );
 	}
 
-	// Statistics.
+	// Calculate Total Spent.
 	$total_spent = 0.0;
 	if ( ! empty( $ahbn_bookings ) ) {
-		foreach ( $ahbn_bookings as $booking_post ) {
-			$raw_p       = get_post_meta( $booking_post->ID, 'ahbn_book_total', true );
-			$total_spent += (float) preg_replace( '/[^0-9.]/', '', (string) $raw_p );
+		foreach ( $ahbn_bookings as $booking ) {
+			$total_spent += (float) $booking->total_amount;
 		}
 	}
 
@@ -139,12 +134,12 @@ function ahbn_account_shortcode_callback() {
 				<span><?php esc_html_e( 'Premium Guest Member', 'awesome-hotel-booking' ); ?></span>
 			</div>
 			<ul class="ahbn-menu">
-				<li class="active"><a class="ahbn-trigger" data-tab="tab-dashboard">&#128202; <?php esc_html_e( 'Dashboard', 'awesome-hotel-booking' ); ?></a></li>
-				<li><a class="ahbn-trigger" data-tab="tab-bookings">&#128197; <?php esc_html_e( 'Bookings', 'awesome-hotel-booking' ); ?></a></li>
-				<li><a class="ahbn-trigger" data-tab="tab-profile">&#128100; <?php esc_html_e( 'Profile', 'awesome-hotel-booking' ); ?></a></li>
-				<li><a class="ahbn-trigger" data-tab="tab-password">&#128274; <?php esc_html_e( 'Password', 'awesome-hotel-booking' ); ?></a></li>
-				<li style="margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
-					<a href="<?php echo esc_url( wp_logout_url( home_url() ) ); ?>" style="color:#ef4444;">&#128682; <?php esc_html_e( 'Sign Out', 'awesome-hotel-booking' ); ?></a>
+				<li class="active"><a href="#tab-dashboard" class="ahbn-trigger" data-tab="tab-dashboard"><span class="dashicons dashicons-performance" aria-hidden="true"></span> <?php esc_html_e( 'Dashboard', 'awesome-hotel-booking' ); ?></a></li>
+				<li><a href="#tab-bookings" class="ahbn-trigger" data-tab="tab-bookings"><span class="dashicons dashicons-calendar-alt" aria-hidden="true"></span> <?php esc_html_e( 'Bookings', 'awesome-hotel-booking' ); ?></a></li>
+				<li><a href="#tab-profile" class="ahbn-trigger" data-tab="tab-profile"><span class="dashicons dashicons-admin-users" aria-hidden="true"></span> <?php esc_html_e( 'Profile', 'awesome-hotel-booking' ); ?></a></li>
+				<li><a href="#tab-password" class="ahbn-trigger" data-tab="tab-password"><span class="dashicons dashicons-lock" aria-hidden="true"></span> <?php esc_html_e( 'Password', 'awesome-hotel-booking' ); ?></a></li>
+				<li style="margin-top:20px; border-top:1px solid #e2e8f0; padding-top:15px;">
+					<a href="<?php echo esc_url( wp_logout_url( home_url() ) ); ?>" style="color:#ef4444;"><span class="dashicons dashicons-external" aria-hidden="true"></span> <?php esc_html_e( 'Sign Out', 'awesome-hotel-booking' ); ?></a>
 				</li>
 			</ul>
 		</aside>
@@ -152,8 +147,9 @@ function ahbn_account_shortcode_callback() {
 		<main class="ahbn-main-content">
 			<?php echo wp_kses_post( $ahbn_status_msg ); ?>
 
+			<!-- Tab: Dashboard -->
 			<div id="tab-dashboard" class="ahbn-tab-content active">
-				<h2 style="margin-top:0; font-weight:800;">
+				<h2 style="margin-top:0; font-family:'Playfair Display',Georgia,serif; font-size:26px; color:#0a192f;">
 					<?php
 					printf(
 						/* translators: %s: Guest first name */
@@ -168,7 +164,7 @@ function ahbn_account_shortcode_callback() {
 						<small><?php esc_html_e( 'Total Stays', 'awesome-hotel-booking' ); ?></small>
 					</div>
 					<div class="ahbn-stat-box">
-						<b><?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $total_spent ) : (string) number_format_i18n( $total_spent, 2 ) ); ?></b>
+						<b><?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $total_spent ) : '$' . number_format( $total_spent, 2 ) ); ?></b>
 						<small><?php esc_html_e( 'Total Spent', 'awesome-hotel-booking' ); ?></small>
 					</div>
 					<div class="ahbn-stat-box">
@@ -176,90 +172,89 @@ function ahbn_account_shortcode_callback() {
 						<small><?php esc_html_e( 'Member Since', 'awesome-hotel-booking' ); ?></small>
 					</div>
 				</div>
-				<div style="background:#0f172a; color:#fff; padding:35px; border-radius:18px;">
-					<h3 style="margin:0; font-size:20px;"><?php esc_html_e( 'Planning your next visit?', 'awesome-hotel-booking' ); ?></h3>
+				<div style="background:linear-gradient(135deg, #07111e 0%, #0a192f 100%); color:#fff; padding:35px; border-radius:18px; border:1px solid rgba(197,168,128,0.2);">
+					<h3 style="margin:0; font-size:20px; font-family:'Playfair Display',Georgia,serif; color:#ffffff;"><?php esc_html_e( 'Planning your next visit?', 'awesome-hotel-booking' ); ?></h3>
 					<p style="color:#94a3b8; margin:10px 0 20px; font-size:14px;">
 						<?php esc_html_e( 'Explore our premium suites and book directly for exclusive upgrades and loyalty perks.', 'awesome-hotel-booking' ); ?>
 					</p>
-					<a href="<?php echo esc_url( home_url( '/rooms' ) ); ?>" style="background:#bf9441; color:#fff; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:700; display:inline-block;">
+					<a href="<?php echo esc_url( home_url( '/rooms' ) ); ?>" style="background:#c5a880; color:#0a192f; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:700; display:inline-block; transition:0.2s;">
 						<?php esc_html_e( 'Browse Available Rooms', 'awesome-hotel-booking' ); ?>
 					</a>
 				</div>
 			</div>
 
+			<!-- Tab: Bookings -->
 			<div id="tab-bookings" class="ahbn-tab-content">
-				<h2 style="margin-top:0; font-weight:800;"><?php esc_html_e( 'Your Stay History', 'awesome-hotel-booking' ); ?></h2>
+				<h2 style="margin-top:0; font-family:'Playfair Display',Georgia,serif; font-size:26px; color:#0a192f;"><?php esc_html_e( 'Your Stay History', 'awesome-hotel-booking' ); ?></h2>
 				<?php if ( ! empty( $ahbn_bookings ) ) : ?>
-					<?php
-					foreach ( $ahbn_bookings as $booking ) :
-						$rid          = absint( get_post_meta( $booking->ID, 'ahbn_book_room_id', true ) );
-						$raw_status   = (string) get_post_meta( $booking->ID, 'status', true );
-						$status_val   = ! empty( $raw_status ) ? sanitize_key( $raw_status ) : 'pending';
-						$room_no      = (string) get_post_meta( $rid, 'ahbn_room_no', true );
-						$checkin_str  = (string) get_post_meta( $booking->ID, 'ahbn_book_checkin', true );
-						$checkout_str = (string) get_post_meta( $booking->ID, 'ahbn_book_checkout', true );
-						$total_str    = get_post_meta( $booking->ID, 'ahbn_book_total', true );
-						$total_clean  = (float) preg_replace( '/[^0-9.]/', '', (string) $total_str );
-						?>
-						<div class="ahbn-res-card">
-							<div style="display:flex; gap:20px; align-items:center;">
-								<?php if ( $rid && has_post_thumbnail( $rid ) ) : ?>
-									<?php echo get_the_post_thumbnail( $rid, array( 70, 70 ), array( 'class' => 'ahbn-res-img', 'style' => 'border-radius:12px; object-fit:cover;' ) ); ?>
-								<?php else : ?>
-									<div style="width:70px; height:70px; background:#f1f5f9; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:24px;">&#127976;</div>
-								<?php endif; ?>
-								<div>
-									<h4 style="margin:0; font-size:16px; color:#0f172a;">
-										<?php echo esc_html( $rid ? get_the_title( $rid ) : __( 'Standard Room', 'awesome-hotel-booking' ) ); ?>
-										<?php if ( ! empty( $room_no ) ) : ?>
-											<small style="color:#bf9441;">
-												(<?php
-												printf(
-													/* translators: %s: Room number */
-													esc_html__( 'Rm %s', 'awesome-hotel-booking' ),
-													esc_html( $room_no )
-												);
-												?>)
-											</small>
-										<?php endif; ?>
-									</h4>
-									<div style="font-size:13px; color:#64748b; margin-top:5px;">
-										&#128197; <?php echo esc_html( ! empty( $checkin_str ) ? $checkin_str : '—' ); ?> — <?php echo esc_html( ! empty( $checkout_str ) ? $checkout_str : '—' ); ?>
+					<div class="ahbn-res-list">
+						<?php foreach ( $ahbn_bookings as $booking ) :
+							$status_val   = ! empty( $booking->status ) ? sanitize_key( $booking->status ) : 'pending';
+							$suite_title  = ! empty( $booking->room_title ) ? $booking->room_title : __( 'Luxury Suite', 'awesome-hotel-booking' );
+							if ( ! empty( $booking->room_number ) ) {
+								$suite_title = '#' . $booking->room_number . ' ' . $suite_title;
+							}
+							$total_clean  = (float) $booking->total_amount;
+							
+							// Thumbnail URL
+							$thumb_url = '';
+							if ( ! empty( $booking->thumbnail_id ) ) {
+								$thumb_url = wp_get_attachment_image_url( (int) $booking->thumbnail_id, 'thumbnail' );
+							}
+							?>
+							<div class="ahbn-res-card">
+								<div style="display:flex; gap:16px; align-items:center;">
+									<?php if ( ! empty( $thumb_url ) ) : ?>
+										<img src="<?php echo esc_url( $thumb_url ); ?>" alt="" class="ahbn-res-img" style="width:64px; height:64px; border-radius:10px; object-fit:cover; border:1px solid #e2e8f0;">
+									<?php else : ?>
+										<div style="width:64px; height:64px; background:#f8fafc; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#94a3b8; border:1px solid #e2e8f0;">
+											<span class="dashicons dashicons-building" aria-hidden="true"></span>
+										</div>
+									<?php endif; ?>
+									<div>
+										<span class="ahbn-folio-code"><?php echo esc_html( ! empty( $booking->booking_code ) ? $booking->booking_code : '#' . $booking->id ); ?></span>
+										<h4 style="margin:4px 0; font-size:15px; color:#0f172a;"><?php echo esc_html( $suite_title ); ?></h4>
+										<div style="font-size:12px; color:#64748b;">
+											<span class="dashicons dashicons-calendar" style="font-size:14px; width:14px; height:14px; vertical-align:middle;" aria-hidden="true"></span> 
+											<?php echo esc_html( ! empty( $booking->checkin_date ) ? wp_date( 'M j, Y', strtotime( $booking->checkin_date ) ) : '—' ); ?> &rarr; <?php echo esc_html( ! empty( $booking->checkout_date ) ? wp_date( 'M j, Y', strtotime( $booking->checkout_date ) ) : '—' ); ?>
+										</div>
 									</div>
 								</div>
-							</div>
-							<div style="text-align:right;">
-								<div style="font-weight:800; color:#0f172a; font-size:18px; margin-bottom:5px;">
-									<?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $total_clean ) : (string) number_format_i18n( $total_clean, 2 ) ); ?>
+								<div style="text-align:right;">
+									<div style="font-family:'JetBrains Mono',monospace; font-weight:800; color:#0a192f; font-size:16px; margin-bottom:6px;">
+										$<?php echo esc_html( number_format( $total_clean, 2 ) ); ?>
+									</div>
+									<span class="ahbn-status-badge status-<?php echo esc_attr( $status_val ); ?>">
+										<?php echo esc_html( ucfirst( str_replace( '_', ' ', $status_val ) ) ); ?>
+									</span>
 								</div>
-								<span class="status-pill status-<?php echo esc_attr( $status_val ); ?>">
-									<?php echo esc_html( ucfirst( $status_val ) ); ?>
-								</span>
 							</div>
-						</div>
-					<?php endforeach; ?>
+						<?php endforeach; ?>
+					</div>
 				<?php else : ?>
-					<div style="text-align:center; padding:60px; color:#94a3b8; border:1px dashed #cbd5e1; border-radius:16px;">
-						<?php esc_html_e( "You haven't made any reservations yet.", 'awesome-hotel-booking' ); ?>
+					<div style="text-align:center; padding:60px; color:#94a3b8; border:1px dashed #cbd5e1; border-radius:16px; background:#fafafa;">
+						<span class="dashicons dashicons-calendar-alt" style="font-size:36px; width:36px; height:36px; color:#cbd5e1;" aria-hidden="true"></span>
+						<p style="margin:10px 0 0; font-size:14px;"><?php esc_html_e( "You haven't made any reservations yet.", 'awesome-hotel-booking' ); ?></p>
 					</div>
 				<?php endif; ?>
 			</div>
 
+			<!-- Tab: Profile -->
 			<div id="tab-profile" class="ahbn-tab-content">
-				<h2 style="margin-top:0; font-weight:800;"><?php esc_html_e( 'Guest Profile', 'awesome-hotel-booking' ); ?></h2>
+				<h2 style="margin-top:0; font-family:'Playfair Display',Georgia,serif; font-size:26px; color:#0a192f;"><?php esc_html_e( 'Guest Profile', 'awesome-hotel-booking' ); ?></h2>
 				<form method="POST" action="">
 					<?php wp_nonce_field( 'ahbn_account_action', 'ahbn_nonce' ); ?>
 					<div class="ahbn-field-group">
-						<label for="ahbn_fname"><?php esc_html_e( 'First / Display Name', 'awesome-hotel-booking' ); ?></label>
-						<input type="text" id="ahbn_fname" name="fname" value="<?php echo esc_attr( $current_user->first_name ); ?>" required>
+						<label for="ahbn_fname"><?php esc_html_e( 'Display / First Name', 'awesome-hotel-booking' ); ?></label>
+						<input type="text" id="ahbn_fname" name="fname" value="<?php echo esc_attr( $current_user->first_name ); ?>" required class="ahbn-input-field">
 					</div>
 					<div class="ahbn-field-group">
 						<label for="ahbn_phone"><?php esc_html_e( 'Phone Number', 'awesome-hotel-booking' ); ?></label>
-						<input type="text" id="ahbn_phone" name="phone" value="<?php echo esc_attr( get_user_meta( $user_id, 'billing_phone', true ) ); ?>">
+						<input type="text" id="ahbn_phone" name="phone" value="<?php echo esc_attr( get_user_meta( $user_id, 'billing_phone', true ) ); ?>" class="ahbn-input-field">
 					</div>
 					<div class="ahbn-field-group">
-						<label for="ahbn_address"><?php esc_html_e( 'Address', 'awesome-hotel-booking' ); ?></label>
-						<textarea id="ahbn_address" name="address" rows="3"><?php echo esc_textarea( get_user_meta( $user_id, 'billing_address_1', true ) ); ?></textarea>
+						<label for="ahbn_address"><?php esc_html_e( 'Billing Address', 'awesome-hotel-booking' ); ?></label>
+						<textarea id="ahbn_address" name="address" rows="3" class="ahbn-textarea-field"><?php echo esc_textarea( get_user_meta( $user_id, 'billing_address_1', true ) ); ?></textarea>
 					</div>
 					<button type="submit" name="ahbn_save_account" class="ahbn-submit-btn">
 						<?php esc_html_e( 'Update Profile Information', 'awesome-hotel-booking' ); ?>
@@ -267,20 +262,21 @@ function ahbn_account_shortcode_callback() {
 				</form>
 			</div>
 
+			<!-- Tab: Password -->
 			<div id="tab-password" class="ahbn-tab-content">
-				<h2 style="margin-top:0; font-weight:800;"><?php esc_html_e( 'Security Settings', 'awesome-hotel-booking' ); ?></h2>
+				<h2 style="margin-top:0; font-family:'Playfair Display',Georgia,serif; font-size:26px; color:#0a192f;"><?php esc_html_e( 'Security Settings', 'awesome-hotel-booking' ); ?></h2>
 				<form method="POST" action="">
 					<?php wp_nonce_field( 'ahbn_account_action', 'ahbn_nonce' ); ?>
-					<p style="color:#64748b; margin-bottom:25px;">
+					<p style="color:#64748b; margin-bottom:25px; font-size:13px;">
 						<?php esc_html_e( 'Update your password to keep your account secure.', 'awesome-hotel-booking' ); ?>
 					</p>
 					<div class="ahbn-field-group">
 						<label for="ahbn_new_pass"><?php esc_html_e( 'New Password', 'awesome-hotel-booking' ); ?></label>
-						<input type="password" id="ahbn_new_pass" name="new_pass" placeholder="<?php esc_attr_e( 'Enter new password', 'awesome-hotel-booking' ); ?>">
+						<input type="password" id="ahbn_new_pass" name="new_pass" placeholder="<?php esc_attr_e( 'Enter new password', 'awesome-hotel-booking' ); ?>" class="ahbn-input-field">
 					</div>
 					<div class="ahbn-field-group">
 						<label for="ahbn_conf_pass"><?php esc_html_e( 'Confirm New Password', 'awesome-hotel-booking' ); ?></label>
-						<input type="password" id="ahbn_conf_pass" name="conf_pass" placeholder="<?php esc_attr_e( 'Repeat new password', 'awesome-hotel-booking' ); ?>">
+						<input type="password" id="ahbn_conf_pass" name="conf_pass" placeholder="<?php esc_attr_e( 'Repeat new password', 'awesome-hotel-booking' ); ?>" class="ahbn-input-field">
 					</div>
 					<button type="submit" name="ahbn_save_account" class="ahbn-submit-btn">
 						<?php esc_html_e( 'Update Account Password', 'awesome-hotel-booking' ); ?>
@@ -289,6 +285,283 @@ function ahbn_account_shortcode_callback() {
 			</div>
 		</main>
 	</div>
+
+	<style>
+		.ahbn-portal-container {
+			display: grid;
+			grid-template-columns: 280px 1fr;
+			gap: 30px;
+			max-width: 1200px;
+			margin: 40px auto;
+			padding: 0 20px;
+			font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			color: #0f172a;
+			box-sizing: border-box;
+		}
+
+		.ahbn-portal-container * {
+			box-sizing: border-box;
+		}
+
+		/* Sidebar */
+		.ahbn-sidebar {
+			background: #ffffff;
+			border: 1px solid #e2e8f0;
+			border-radius: 16px;
+			padding: 24px;
+			height: fit-content;
+			box-shadow: 0 4px 20px -2px rgba(10, 20, 38, 0.04);
+		}
+
+		.ahbn-user-profile {
+			text-align: center;
+			padding-bottom: 20px;
+			border-bottom: 1px solid #f1f5f9;
+			margin-bottom: 16px;
+		}
+
+		.ahbn-user-profile img {
+			border-radius: 50%;
+			border: 2px solid #c5a880;
+			margin-bottom: 10px;
+		}
+
+		.ahbn-user-profile strong {
+			display: block;
+			font-size: 16px;
+			color: #0a192f;
+		}
+
+		.ahbn-user-profile span {
+			font-size: 11px;
+			color: #64748b;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+
+		.ahbn-menu {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+		}
+
+		.ahbn-menu li {
+			margin-bottom: 6px;
+		}
+
+		.ahbn-menu li a {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 10px 14px;
+			border-radius: 8px;
+			color: #475569;
+			text-decoration: none;
+			font-size: 13px;
+			font-weight: 600;
+			transition: all 0.2s ease;
+		}
+
+		.ahbn-menu li a .dashicons {
+			color: #94a3b8;
+			font-size: 18px;
+			width: 18px;
+			height: 18px;
+			transition: color 0.2s ease;
+		}
+
+		.ahbn-menu li a:hover {
+			background: #f8fafc;
+			color: #0a192f;
+		}
+
+		.ahbn-menu li.active a {
+			background: #0a192f;
+			color: #ffffff;
+		}
+
+		.ahbn-menu li.active a .dashicons {
+			color: #c5a880;
+		}
+
+		/* Main Content Box */
+		.ahbn-main-content {
+			background: #ffffff;
+			border: 1px solid #e2e8f0;
+			border-radius: 16px;
+			padding: 32px;
+			box-shadow: 0 4px 20px -2px rgba(10, 20, 38, 0.04);
+		}
+
+		.ahbn-tab-content {
+			display: none;
+		}
+
+		.ahbn-tab-content.active {
+			display: block;
+		}
+
+		/* Alerts */
+		.ahbn-alert {
+			padding: 12px 16px;
+			border-radius: 8px;
+			font-size: 13px;
+			font-weight: 600;
+			margin-bottom: 24px;
+		}
+
+		.ahbn-alert.success {
+			background: #ecfdf5;
+			color: #065f46;
+			border: 1px solid #a7f3d0;
+		}
+
+		.ahbn-alert.error {
+			background: #fff1f2;
+			color: #9f1239;
+			border: 1px solid #fecdd3;
+		}
+
+		/* Dashboard Stats */
+		.ahbn-stats-row {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 16px;
+			margin-bottom: 24px;
+		}
+
+		.ahbn-stat-box {
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 20px;
+			text-align: center;
+		}
+
+		.ahbn-stat-box b {
+			display: block;
+			font-family: 'JetBrains Mono', monospace;
+			font-size: 26px;
+			font-weight: 800;
+			color: #0a192f;
+			margin-bottom: 4px;
+		}
+
+		.ahbn-stat-box small {
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			color: #64748b;
+		}
+
+		/* Reservations List */
+		.ahbn-res-list {
+			display: flex;
+			flex-direction: column;
+			gap: 14px;
+		}
+
+		.ahbn-res-card {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 16px 20px;
+			gap: 16px;
+		}
+
+		.ahbn-folio-code {
+			font-family: 'JetBrains Mono', monospace;
+			font-size: 11px;
+			font-weight: 700;
+			background: #f1f5f9;
+			padding: 2px 6px;
+			border-radius: 4px;
+			border: 1px solid #cbd5e1;
+			color: #0a192f;
+			display: inline-block;
+		}
+
+		.ahbn-status-badge {
+			display: inline-block;
+			padding: 3px 10px;
+			border-radius: 99px;
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+		}
+
+		.status-confirmed  { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+		.status-checked_in { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+		.status-checked_out{ background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+		.status-pending    { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+		.status-cancelled  { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
+
+		/* Form Fields */
+		.ahbn-field-group {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			margin-bottom: 18px;
+		}
+
+		.ahbn-field-group label {
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			color: #334155;
+		}
+
+		.ahbn-input-field,
+		.ahbn-textarea-field {
+			width: 100%;
+			border: 1px solid #cbd5e1 !important;
+			border-radius: 8px !important;
+			padding: 10px 14px !important;
+			font-size: 13px !important;
+			background: #ffffff !important;
+			color: #0f172a !important;
+			outline: none;
+		}
+
+		.ahbn-input-field:focus,
+		.ahbn-textarea-field:focus {
+			border-color: #0a192f !important;
+			box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.1) !important;
+		}
+
+		.ahbn-submit-btn {
+			background: #0a192f;
+			color: #ffffff;
+			border: 1px solid #0a192f;
+			padding: 10px 22px;
+			border-radius: 8px;
+			font-size: 13px;
+			font-weight: 700;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+		.ahbn-submit-btn:hover {
+			background: #c5a880;
+			border-color: #c5a880;
+			color: #0a192f;
+		}
+
+		@media (max-width: 850px) {
+			.ahbn-portal-container {
+				grid-template-columns: 1fr;
+			}
+			.ahbn-stats-row {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
 
 	<script>
 	document.addEventListener('DOMContentLoaded', function() {
