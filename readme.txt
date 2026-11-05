@@ -1,116 +1,122 @@
 === Awesome Hotel Booking ===
 Contributors: nahian91
-Tags: car rental, vehicle booking, rental history, car rental crm, car booking
+Tags: hotel booking, room reservation, hotel pms, booking calendar, hospitality management
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-The most comprehensive, high-performance car rental engine for WordPress. Total control over your fleet, bookings, revenue, and customer experience.
+Enterprise Hotel Booking & Hospitality Management Engine built on high-performance custom relational database tables.
 
 == Description ==
 
-**Awesome Hotel Booking** is a professional-grade ERP solution for vehicle rental businesses. Designed for high-volume agencies and luxury car hire services, this plugin provides a seamless bridge between complex fleet logistics and a conversion-optimized WordPress frontend.
+**Awesome Hotel Booking** is an enterprise-grade PMS (Property Management System) and online reservation engine designed for luxury hotels, resorts, boutique inns, and serviced apartments.
 
-Built with a **Performance-First** philosophy, the system ensures your booking funnels are lightning-fast, mobile-responsive, and SEO-ready out of the box. From managing a diverse fleet to tracking multi-currency revenue in **£**, this plugin is the only tool your rental business needs.
+Operating on **9 high-performance relational database tables** (`wp_ahbn_rooms`, `wp_ahbn_bookings`, `wp_ahbn_services`, `wp_ahbn_coupons`, `wp_ahbn_staff`, `wp_ahbn_housekeeping`, `wp_ahbn_expenses`, `wp_ahbn_rates`, and `wp_ahbn_seo`), the plugin eliminates post-meta performance bottlenecks, providing instant availability lookups and seamless guest checkouts.
+
+Styled with a signature **Champagne Gold & Deep Navy** enterprise UI system, the plugin delivers a cohesive experience across management ledgers and customer booking portals.
 
 == Key Modules & Features ==
 
-### 📊 Dashboard: Business Intelligence Overview
-Get an instant pulse on your business. The centralized overview shows:
-* Real-time reservation stats.
-* Revenue snapshots and active rental counts.
-* Quick-action shortcuts for daily operations.
+### 📊 Operations Dashboard
+Real-time property intelligence at a glance:
+- Real-time room occupancy rates and upcoming check-ins/check-outs.
+- Daily revenue snapshots and financial metrics in your chosen currency.
+- Quick-action shortcuts for daily hotel desk operations.
 
-### 🚗 Fleet Management (Cars)
-Full lifecycle management of your vehicles.
-* **All Cars:** A comprehensive grid view with status tracking.
-* **Add Car:** Intuitive interface for technical specs, pricing, and galleries.
+### 🛏️ Suite & Room Inventory Management
+Granular control over room inventory and configurations:
+- **Full Inventory View:** Comprehensive suite ledger powered by direct relational database queries.
+- **Dynamic Room Number Synchronization:** Selecting a suite classification automatically filters and displays related door/room numbers.
+- **Physical Specifications:** Standardized bedding setups (King, Queen, Twin), room dimensions (sq ft / sqm), bathroom setups, and view orientations (Oceanfront, Skyline, Poolside).
+- **Interactive Switchboard:** Toggle complimentary amenities and attachable paid services with iOS-style pill switches.
+- **Media Gallery:** Native WordPress Media Library integration for hero images and multi-image photo carousels.
 
-### 📅 Booking Control Center
-Manage the heart of your business with precision.
-* **All Bookings:** Track every reservation from initial inquiry to vehicle return.
-* **Dynamic Status:** Instantly update statuses to trigger customer notifications.
+### 📅 Booking Control Center & Ledgers
+High-volume reservation management:
+- **Direct Folio Tracking:** Track reservations from booking inquiry, check-in, housekeeping turn, to guest check-out.
+- **Status Workflows:** Real-time status toggles for `confirmed`, `checked_in`, `checked_out`, and `cancelled`.
 
-### 🏷️ Smart Categories
-Advanced taxonomy management to help users find the right ride.
-* **Add & Manage Categories:** Group by Luxury, Economy, SUV, Electric, or custom tags.
-* **SEO Optimized:** Category pages are structured for maximum search visibility.
+### 🧹 Housekeeping & Facility Management
+Maintain room readiness across your property:
+- Assign cleaning tasks directly to housekeeping staff.
+- Track room status transitions (`clean`, `dirty`, `in_progress`, `inspected`).
 
-### ➕ Revenue-Boosting Extras
-Maximize your Average Order Value (AOV).
-* **Manage Extras:** Add GPS, Child Seats, Full Insurance, or Chauffeur services.
-* **Per-Car Assignment:** Link specific extras to specific vehicle types.
+### 👔 Staff & Shift Roster
+Comprehensive hospitality employee directory:
+- Department categorization (Management, Front Desk, Housekeeping, Concierge, Maintenance).
+- Shift scheduling (Morning, Evening, Night Audit, Flexible).
+- Quick modal preview for employee contact info, hire dates, and CPR/safety certifications.
+- Optional linking to native WordPress user accounts.
 
-### 📈 Reports & Analytics
-Detailed financial and performance tracking.
-* **Details Car Report:** Deep-dive into individual vehicle performance.
-* **Utilization Tracking:** See which cars are earning the most revenue.
+### 🎟️ Promotional Coupons & Discounts
+Flexible campaign management with built-in guardrails:
+- Percentage-based (%) or flat-rate currency discounts.
+- Minimum booking spend thresholds and maximum discount caps.
+- Strict expiration dates and usage limit tracking.
 
-### 👥 Customer CRM
-A dedicated database for your growing clientele.
-* **Customer Info:** Detailed profiles including contact data and rental history.
-* **Lifetime Value:** Track your most loyal customers for targeted marketing.
+### 🛎️ Attachable Paid Extra Services
+Maximize Average Order Value (AOV) on reservation checkout:
+- Sourced directly from `wp_ahbn_services`.
+- Customizable billing cadences: per stay, per night, or per guest.
+- Upsells for airport transfers, champagne breakfast, late checkouts, and spa packages.
 
-### ⚙️ Global Settings Engine
-Tailor the software to your specific brand requirements.
-* **General:** Configure your site identity and currency (Full **£** support with Left/Right positioning).
-* **Payment:** Manage gateways and checkout logic.
-* **Email:** Automated templates for booking confirmations and status updates.
+### ⚙️ Property Policies & Global Settings
+Tailor property operations to your brand:
+- Configurable standard check-in and check-out times.
+- Minimum guest booking age and cancellation policy windows.
+- Multi-currency engine with customizable symbol positioning (e.g. £, $, €).
+- Property house rules (pet allowances, smoking regulations).
 
 == ⌨️ Shortcode Library ==
 
-Deploy a professional rental site in minutes using our advanced shortcode suite:
+Deploy a complete luxury hospitality website using our shortcode suite:
 
-* `[ahbn_header_auth]` - Dynamic login/register toggle for your site header.
-* `[ahbn_search_form]` - A conversion-focused car availability search bar.
-* `[ahbn_all_cars]` - Display your entire fleet in a premium, responsive grid.
-* `[ahbn_thanks]` - A professional post-booking confirmation page.
-* `[ahbn_login]` - Custom-styled customer login portal.
-* `[ahbn_register]` - User-friendly registration form for new clients.
-* `[ahbn_account]` - The elite customer dashboard for managing history and receipts.
+- `[ahbn_header_auth]` - Dynamic header authentication widget showing guest avatar, name, and account link when logged in, or Sign In / Join Now buttons when logged out.
+- `[ahbn_search_bar]` - Frontend booking search bar with check-in/out date selection and guest capacity counters.
+- `[ahbn_all_rooms]` - Full room inventory showcase in an interactive, responsive grid with pricing, amenities, and suite details links.
+- `[ahbn_room_details id="1"]` - Dedicated single room showcase with photo carousels, full specifications, and reservation actions.
+- `[ahbn_checkout]` - Reservation checkout funnel with add-on upsells, coupon redemption, and instant booking submission.
+- `[ahbn_thanks]` - Post-booking confirmation screen displaying reservation codes, stay details, and invoice summaries.
+- `[ahbn_login]` - AJAX-powered luxury guest authentication and login card.
+- `[ahbn_register]` - Member sign-up portal with automatic login and guest profile creation.
+- `[ahbn_account]` - Self-service guest dashboard for viewing stay history, folios, and editing personal profile details.
 
 == Installation ==
 
-1. Upload the `awesome-car-rental` folder to the `/wp-content/plugins/` directory.
-2. Activate the plugin through the 'Plugins' menu in WordPress.
-3. Navigate to **Car Rental > Settings** to set your currency (**£**) and email templates.
-4. Use the shortcodes above to build your frontend pages.
+1. Upload the `awesome-hotel-booking` folder to the `/wp-content/plugins/` directory.
+2. Activate the plugin through the **Plugins** menu in WordPress.
+3. The plugin will automatically construct the required custom database tables and publish default core pages (`/rooms/`, `/room-details/`, `/ahbn-account/`, `/ahbn-login/`, `/ahbn-registration/`, `/ahbn-thanks/`).
+4. Navigate to **Hotel Booking > Settings** to verify your currency symbol, check-in times, and room numbering maps.
+5. Use the shortcodes to integrate booking features into your pages or Elementor templates.
 
 == Frequently Asked Questions ==
 
-= Can I use £ as my primary currency? =
-Yes! Navigate to the **General Settings** to set £ as your symbol and choose the position.
+= Does this plugin create custom post types or custom SQL tables? =
+Awesome Hotel Booking utilizes 9 custom relational database tables for core hotel functions (rooms, bookings, staff, housekeeping, coupons, extra services, rates, SEO, and expenses). This prevents WordPress post-meta query slowdowns and ensures instant availability calculations.
 
-= Are the forms mobile friendly? =
-Absolutely. Every shortcode, including the search form and account dashboard, is 100% responsive.
+= How do I assign specific room numbers to a suite type? =
+Go to **Hotel Booking > Settings**. In the **Suite Classifications & Assigned Door Numbers** repeater, add your suite classification (e.g., Deluxe King Suite) and list the door numbers separated by commas (e.g., `201, 202, 203, 204`). When editing or creating a room under that classification, the room number dropdown will automatically filter to those numbers.
 
-= How do I add insurance as an extra? =
-Go to the **Extras** menu, add "Insurance," set the price, and assign it to your fleet.
+= Can I use £ (GBP) or other currencies? =
+Yes. Navigate to **Hotel Booking > Settings** to set your preferred currency symbol and choose between left or right placement.
 
-== Screenshots ==
-
-1. **Dashboard: Business Intelligence Overview** - A high-level command center showing real-time revenue snapshots, active booking stats, and fleet utilization metrics.
-2. **Cars: Fleet Inventory & Add/Edit Car** - The advanced vehicle manager where you control technical specifications, high-res galleries, and NYC pickup locations.
-3. **Bookings: Reservation Control Center** - The master log for tracking all rental orders, managing customer pickup schedules, and updating live status labels.
-4. **Categories: Smart Taxonomy Logic** - Organize your fleet into Luxury, SUV, or Electric groups to enhance user navigation and boost SEO rankings.
-5. **Extras: Profitable Upsell Module** - Create and manage high-margin add-ons like GPS, Child Seats, and Insurance packages tailored for specific vehicle types.
-6. **Reports: Performance Analytics** - Deep-dive financial reporting that calculates total revenue, monthly growth, and individual vehicle ROI.
-7. **Customers: Advanced CRM Profiles** - Access detailed customer database info, including contact details, billing addresses, and full lifetime rental history.
-8. **Settings: Global Localization & Payment** - Configure site identity, set the currency to £, manage tax rates, and customize automated email templates.
-9. **Shortcodes: Frontend Deployment Guide** - A quick-reference library for implementing the [ahbn_account] portal, search forms, and responsive car grids.
-10. **All Cars: Luxury Fleet Directory** - A high-conversion grid showcasing your entire New York City fleet with real-time price badges in £ and filterable categories.
-11. **Single Car: Precision Booking Page** - A detailed vehicle view featuring technical specifications (AWD, 360° Camera), comfort amenities, and a high-performance booking widget.
-12. **Account: The Elite Customer Dashboard** - A private, AJAX-powered portal where clients can track active rentals, download receipts, and manage their NYC pickup preferences.
-13. **Login: Secure Member Access** - A sleek, brand-integrated login interface designed for high security and a seamless user experience.
-14. **Registration: New Client Onboarding** - A streamlined, mobile-optimized form to convert visitors into loyal customers in just a few clicks.
+= What happens when a guest creates an account? =
+The registration system automatically validates their details, creates a guest profile, updates their billing address and phone metadata, logs them in instantly via secure authentication cookies, and redirects them to their reservation dashboard.
 
 == Changelog ==
 
-= 1.0.0 =
-* Initial stable release with full module suite.
-* Premium AJAX Customer Dashboard.
-* Advanced Multi-Currency support.
+= 1.1.0 =
+* Complete transition to high-performance relational database engine across all core entities.
+* Modularized codebase structure across all administrative views.
+* Upgraded Room Editor with full-width segmented tab navigation and iOS-style toggle switches.
+* Added dynamic door number filtering synchronized with selected suite classifications.
+* Added Hotel Staff & Shift Management module with instant profile view modals.
+* Enhanced promotional coupon system with usage limits and minimum/maximum spend guardrails.
+* Added header authentication bar shortcode with avatar recognition.
+* Optimized direct SQL queries, table indexing, and database install scripts.
 
+= 1.0.0 =
+* Initial public release.

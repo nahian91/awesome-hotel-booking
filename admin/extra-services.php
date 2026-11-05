@@ -4,13 +4,111 @@
  *
  * Built on high-performance custom relational database tables:
  * {$wpdb->prefix}ahbn_services
- * Features sub-tabs: All Extra Services & Add Extra Service.
+ * Features sub-tabs: All Extra Services, Add Extra Service, and Single Service Folio.
  *
  * @package AwesomeHotelBooking
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
+}
+
+/**
+ * Render the dedicated single extra service folio inspection view.
+ *
+ * @param int $service_id Target service ID to display.
+ * @return void
+ */
+function ahbn_render_single_extra_service_view( $service_id = 0 ) {
+	global $wpdb;
+	$table_services   = $wpdb->prefix . 'ahbn_services';
+	$base_service_url = admin_url( 'admin.php?page=awesome_hotel_booking&tab=extra_services' );
+
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	$service = $wpdb->get_row(
+		$wpdb->prepare( "SELECT * FROM {$table_services} WHERE id = %d", absint( $service_id ) )
+	);
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+	if ( ! $service ) {
+		echo '<div class="ahbn-alert ahbn-alert-error"><div class="ahbn-alert-content"><span class="dashicons dashicons-warning" aria-hidden="true"></span><span>' . esc_html__( 'Extra service record not found.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
+		return;
+	}
+
+	$charge_types = array(
+		'per_stay'             => __( 'Per Stay (One-time)', 'awesome-hotel-booking' ),
+		'per_night'            => __( 'Per Night', 'awesome-hotel-booking' ),
+		'per_person'           => __( 'Per Person (One-time)', 'awesome-hotel-booking' ),
+		'per_night_per_person' => __( 'Per Person / Per Night', 'awesome-hotel-booking' ),
+	);
+
+	$is_active    = ( 'publish' === $service->status );
+	$status_class = $is_active ? 'status-active-now' : 'status-disabled';
+	$status_label = $is_active ? __( 'Active & Available for Guest Booking', 'awesome-hotel-booking' ) : __( 'Hidden / Draft', 'awesome-hotel-booking' );
+	$charge_label = isset( $charge_types[ $service->charge_type ] ) ? $charge_types[ $service->charge_type ] : ucfirst( str_replace( '_', ' ', $service->charge_type ) );
+	$edit_url     = add_query_arg( array( 'action' => 'edit', 'service_id' => $service->id ), $base_service_url );
+	?>
+	<div class="ahbn-panel" style="max-width: 740px; margin: 0 auto; width: 100%;">
+		<div class="ahbn-panel-head" style="display:flex; justify-content:space-between; align-items:center;">
+			<div style="display:flex; align-items:center; gap:8px;">
+				<span class="dashicons dashicons-coffee" style="color:#c5a880; font-size:18px;"></span>
+				<h2><?php printf( esc_html__( 'Service Folio: %s', 'awesome-hotel-booking' ), esc_html( $service->name ) ); ?></h2>
+			</div>
+			<span class="ahbn-status-pill <?php echo esc_attr( $status_class ); ?>">
+				<?php echo esc_html( $status_label ); ?>
+			</span>
+		</div>
+
+		<div class="ahbn-panel-body">
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+				<div class="ahbn-field-group">
+					<span class="ahbn-label"><?php esc_html_e( 'Service Name', 'awesome-hotel-booking' ); ?></span>
+					<strong style="font-size: 18px; color: #0a192f;"><?php echo esc_html( $service->name ); ?></strong>
+				</div>
+
+				<div class="ahbn-field-group">
+					<span class="ahbn-label"><?php esc_html_e( 'Rate / Price', 'awesome-hotel-booking' ); ?></span>
+					<strong class="font-mono" style="font-size: 18px; color: #059669;">
+						<?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $service->price ) : (string) number_format_i18n( $service->price, 2 ) ); ?>
+					</strong>
+				</div>
+			</div>
+
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
+				<div class="ahbn-field-group">
+					<span class="ahbn-label"><?php esc_html_e( 'Billing Cycle / Model', 'awesome-hotel-booking' ); ?></span>
+					<span class="ahbn-charge-badge" style="width: fit-content; margin-top: 4px;">
+						<?php echo esc_html( $charge_label ); ?>
+					</span>
+				</div>
+
+				<div class="ahbn-field-group">
+					<span class="ahbn-label"><?php esc_html_e( 'Inventory Status', 'awesome-hotel-booking' ); ?></span>
+					<p style="margin: 4px 0 0; font-size: 13px; color: #64748b; font-weight:600;">
+						<?php echo esc_html( $is_active ? __( 'Published', 'awesome-hotel-booking' ) : __( 'Draft', 'awesome-hotel-booking' ) ); ?>
+					</p>
+				</div>
+			</div>
+
+			<div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+				<span class="ahbn-label"><?php esc_html_e( 'Service Description / Inclusions', 'awesome-hotel-booking' ); ?></span>
+				<div style="margin-top: 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.6; color: #334155;">
+					<?php echo ! empty( $service->description ) ? nl2br( esc_html( $service->description ) ) : '<em>' . esc_html__( 'No description provided for this service.', 'awesome-hotel-booking' ) . '</em>'; ?>
+				</div>
+			</div>
+		</div>
+
+		<div class="ahbn-panel-footer" style="display:flex; justify-content:space-between; align-items:center;">
+			<a href="<?php echo esc_url( $base_service_url ); ?>" class="ahbn-btn-cancel">
+				&larr; <?php esc_html_e( 'Back to All Services', 'awesome-hotel-booking' ); ?>
+			</a>
+			<a href="<?php echo esc_url( $edit_url ); ?>" class="ahbn-btn-save" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+				<span class="dashicons dashicons-edit" style="font-size: 15px; width: 15px; height: 15px; color: #c5a880;"></span>
+				<?php esc_html_e( 'Edit Extra Service', 'awesome-hotel-booking' ); ?>
+			</a>
+		</div>
+	</div>
+	<?php
 }
 
 /**
@@ -26,25 +124,26 @@ function ahbn_extra_service_tab() {
 	global $wpdb;
 	$table_services = $wpdb->prefix . 'ahbn_services';
 
-	// 1. Resolve Routing Parameters (Synchronized with admin router).
+	// 1. Resolve Routing Parameters.
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
 	$action      = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
 	$service_id  = isset( $_GET['service_id'] ) ? absint( wp_unslash( $_GET['service_id'] ) ) : 0;
 	$active_tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'extra_services';
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-	// Preserve the exact tab slug (extra_services or addons) so routing never breaks.
 	$base_service_url = admin_url( 'admin.php?page=awesome_hotel_booking&tab=' . rawurlencode( $active_tab ) );
 	$add_service_url  = add_query_arg( 'action', 'add', $base_service_url );
 
-	// 2. Handle POST Submissions (Save / Update / Delete).
+	// 2. Buffer Custom Dismissible Alerts.
+	$notices_html = '';
+
 	if ( 'POST' === ( isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '' ) ) {
-		// Save or Edit Service.
+		// Save / Update Service.
 		if ( isset( $_POST['ahbn_save_service'] ) ) {
 			$nonce = isset( $_POST['ahbn_service_nonce'] ) ? sanitize_key( wp_unslash( $_POST['ahbn_service_nonce'] ) ) : '';
 
 			if ( ! wp_verify_nonce( $nonce, 'ahbn_save_service_action' ) ) {
-				echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Security check failed. Please refresh the page.', 'awesome-hotel-booking' ) . '</p></div>';
+				$notices_html .= '<div class="ahbn-alert ahbn-alert-error"><div class="ahbn-alert-content"><span class="dashicons dashicons-warning" aria-hidden="true"></span><span>' . esc_html__( 'Security check failed. Please refresh the page.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 			} else {
 				$post_service_id = isset( $_POST['service_id'] ) ? absint( wp_unslash( $_POST['service_id'] ) ) : 0;
 				$name            = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
@@ -54,7 +153,7 @@ function ahbn_extra_service_tab() {
 				$status          = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : 'publish';
 
 				if ( empty( $name ) || $price < 0 ) {
-					echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Please provide a valid service name and non-negative price.', 'awesome-hotel-booking' ) . '</p></div>';
+					$notices_html .= '<div class="ahbn-alert ahbn-alert-error"><div class="ahbn-alert-content"><span class="dashicons dashicons-warning" aria-hidden="true"></span><span>' . esc_html__( 'Please provide a valid service name and non-negative price.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 				} else {
 					$service_data = array(
 						'name'        => $name,
@@ -77,21 +176,21 @@ function ahbn_extra_service_tab() {
 						);
 
 						if ( false === $updated ) {
-							echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Database error: Could not update extra service.', 'awesome-hotel-booking' ) . ' ' . esc_html( $wpdb->last_error ) . '</p></div>';
+							$notices_html .= '<div class="ahbn-alert ahbn-alert-error"><div class="ahbn-alert-content"><span class="dashicons dashicons-warning" aria-hidden="true"></span><span>' . esc_html__( 'Database error: Could not update extra service.', 'awesome-hotel-booking' ) . ' ' . esc_html( $wpdb->last_error ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 						} else {
-							echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'Extra service updated.', 'awesome-hotel-booking' ) . '</p></div>';
-							$action     = '';
-							$service_id = 0;
+							$notices_html .= '<div class="ahbn-alert ahbn-alert-success"><div class="ahbn-alert-content"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><span><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'Extra service updated successfully.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
+							$action        = '';
+							$service_id    = 0;
 						}
 					} else {
 						$inserted = $wpdb->insert( $table_services, $service_data, $format );
 
 						if ( false === $inserted ) {
-							echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Database error: Could not create extra service.', 'awesome-hotel-booking' ) . ' ' . esc_html( $wpdb->last_error ) . '</p></div>';
+							$notices_html .= '<div class="ahbn-alert ahbn-alert-error"><div class="ahbn-alert-content"><span class="dashicons dashicons-warning" aria-hidden="true"></span><span>' . esc_html__( 'Database error: Could not create extra service.', 'awesome-hotel-booking' ) . ' ' . esc_html( $wpdb->last_error ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 						} else {
-							echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'New extra service created.', 'awesome-hotel-booking' ) . '</p></div>';
-							$action     = '';
-							$service_id = 0;
+							$notices_html .= '<div class="ahbn-alert ahbn-alert-success"><div class="ahbn-alert-content"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><span><strong>' . esc_html__( 'Success:', 'awesome-hotel-booking' ) . '</strong> ' . esc_html__( 'New extra service created.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
+							$action        = '';
+							$service_id    = 0;
 						}
 					}
 					// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -108,7 +207,9 @@ function ahbn_extra_service_tab() {
 				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->delete( $table_services, array( 'id' => $del_id ), array( '%d' ) );
 				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Extra service removed.', 'awesome-hotel-booking' ) . '</p></div>';
+				$notices_html .= '<div class="ahbn-alert ahbn-alert-success"><div class="ahbn-alert-content"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><span>' . esc_html__( 'Extra service removed.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
+			} else {
+				$notices_html .= '<div class="ahbn-alert ahbn-alert-error"><div class="ahbn-alert-content"><span class="dashicons dashicons-warning" aria-hidden="true"></span><span>' . esc_html__( 'Security check failed. Unable to delete service.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 			}
 		}
 	}
@@ -142,9 +243,19 @@ function ahbn_extra_service_tab() {
 	$is_all_active  = ( empty( $action ) );
 	$is_add_active  = ( 'add' === $action );
 	$is_edit_active = ( 'edit' === $action && $service_id > 0 );
+	$is_view_active = ( 'view' === $action && $service_id > 0 );
 	?>
 
-	<!-- Top Sub-Tabs Navigation Bar -->
+	<!-- 1. Dedicated Notification Anchor Above Subtabs -->
+	<div class="ahbn-top-notices-area">
+		<?php
+		if ( ! empty( $notices_html ) ) {
+			echo wp_kses_post( $notices_html );
+		}
+		?>
+	</div>
+
+	<!-- 2. Top Sub-Tabs Navigation Bar -->
 	<div class="ahbn-subtabs-nav-bar">
 		<a href="<?php echo esc_url( $base_service_url ); ?>" class="ahbn-subtab-link <?php echo $is_all_active ? 'is-active' : ''; ?>">
 			<span class="dashicons dashicons-coffee" aria-hidden="true"></span>
@@ -161,10 +272,307 @@ function ahbn_extra_service_tab() {
 				<span class="dashicons dashicons-edit" aria-hidden="true"></span>
 				<span><?php echo esc_html( sprintf( /* translators: %d: service ID */ __( 'Edit Service #%d', 'awesome-hotel-booking' ), $service_id ) ); ?></span>
 			</span>
+		<?php elseif ( $is_view_active ) : ?>
+			<span class="ahbn-subtab-link is-active is-context-tab">
+				<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+				<span><?php echo esc_html( sprintf( /* translators: %d: service ID */ __( 'View Service #%d', 'awesome-hotel-booking' ), $service_id ) ); ?></span>
+			</span>
+		<?php endif; ?>
+	</div>
+
+	<!-- 3. Form, Folio, and Table Panels -->
+	<div class="ahbn-service-wrap">
+		<?php if ( 'view' === $action && $service_id > 0 ) : ?>
+			<?php ahbn_render_single_extra_service_view( $service_id ); ?>
+		<?php elseif ( 'add' === $action || 'edit' === $action ) : ?>
+			<?php
+			$edit_service = null;
+			if ( 'edit' === $action && $service_id > 0 ) {
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$edit_service = $wpdb->get_row(
+					$wpdb->prepare( "SELECT * FROM {$table_services} WHERE id = %d", $service_id )
+				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			}
+			?>
+			<!-- Add / Edit Service Dedicated Panel -->
+			<div class="ahbn-panel" style="max-width: 720px; margin: 0 auto; width: 100%;">
+				<div class="ahbn-panel-head">
+					<span class="dashicons dashicons-coffee" aria-hidden="true"></span>
+					<h2>
+						<?php
+						if ( $edit_service ) {
+							/* translators: %s: service name */
+							printf( esc_html__( 'Edit Extra Service: %s', 'awesome-hotel-booking' ), esc_html( $edit_service->name ) );
+						} else {
+							esc_html_e( 'Register New Extra Service / Add-on', 'awesome-hotel-booking' );
+						}
+						?>
+					</h2>
+				</div>
+
+				<form method="post" action="<?php echo esc_url( $base_service_url ); ?>">
+					<?php wp_nonce_field( 'ahbn_save_service_action', 'ahbn_service_nonce' ); ?>
+					<input type="hidden" name="service_id" value="<?php echo esc_attr( (string) ( $edit_service ? $edit_service->id : 0 ) ); ?>">
+
+					<div class="ahbn-panel-body">
+						<div class="ahbn-field-group">
+							<label for="service_name" class="ahbn-label"><?php esc_html_e( 'Service / Amenity Name *', 'awesome-hotel-booking' ); ?></label>
+							<input type="text" name="name" id="service_name" class="ahbn-input" required value="<?php echo esc_attr( $edit_service ? $edit_service->name : '' ); ?>" placeholder="<?php esc_attr_e( 'e.g. Airport Shuttle, Buffet Breakfast, Spa Access', 'awesome-hotel-booking' ); ?>">
+						</div>
+
+						<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+							<div class="ahbn-field-group">
+								<label for="service_price" class="ahbn-label"><?php esc_html_e( 'Rate / Price *', 'awesome-hotel-booking' ); ?></label>
+								<input type="number" step="0.01" min="0" name="price" id="service_price" class="ahbn-input" required value="<?php echo esc_attr( (string) ( $edit_service ? $edit_service->price : '0.00' ) ); ?>" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
+							</div>
+
+							<div class="ahbn-field-group">
+								<label for="service_charge_type" class="ahbn-label"><?php esc_html_e( 'Charge Frequency Model', 'awesome-hotel-booking' ); ?></label>
+								<select name="charge_type" id="service_charge_type" class="ahbn-select">
+									<?php foreach ( $charge_types as $c_key => $c_label ) : ?>
+										<option value="<?php echo esc_attr( $c_key ); ?>" <?php selected( $edit_service ? $edit_service->charge_type : 'per_stay', $c_key ); ?>>
+											<?php echo esc_html( $c_label ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+							</div>
+						</div>
+
+						<div class="ahbn-field-group">
+							<label for="service_status" class="ahbn-label"><?php esc_html_e( 'Availability Status', 'awesome-hotel-booking' ); ?></label>
+							<select name="status" id="service_status" class="ahbn-select">
+								<option value="publish" <?php selected( $edit_service ? $edit_service->status : 'publish', 'publish' ); ?>>
+									<?php esc_html_e( 'Active & Available for Guest Booking', 'awesome-hotel-booking' ); ?>
+								</option>
+								<option value="draft" <?php selected( $edit_service ? $edit_service->status : '', 'draft' ); ?>>
+									<?php esc_html_e( 'Hidden / Draft', 'awesome-hotel-booking' ); ?>
+								</option>
+							</select>
+						</div>
+
+						<div class="ahbn-field-group">
+							<label for="service_description" class="ahbn-label"><?php esc_html_e( 'Service Description / Inclusions', 'awesome-hotel-booking' ); ?></label>
+							<textarea name="description" id="service_description" rows="3" class="ahbn-textarea" placeholder="<?php esc_attr_e( 'Explain what is included with this service (e.g. One-way airport transfer in premium vehicle).', 'awesome-hotel-booking' ); ?>"><?php echo esc_textarea( $edit_service ? $edit_service->description : '' ); ?></textarea>
+						</div>
+					</div>
+
+					<div class="ahbn-panel-footer">
+						<a href="<?php echo esc_url( $base_service_url ); ?>" class="ahbn-btn-cancel">
+							<?php esc_html_e( 'Cancel', 'awesome-hotel-booking' ); ?>
+						</a>
+						<button type="submit" name="ahbn_save_service" class="ahbn-btn-save">
+							<?php echo $edit_service ? esc_html__( 'Update Extra Service', 'awesome-hotel-booking' ) : esc_html__( 'Save Extra Service', 'awesome-hotel-booking' ); ?>
+						</button>
+					</div>
+				</form>
+			</div>
+
+		<?php else : ?>
+
+			<!-- Header Toolbar (All Services View) -->
+			<header class="ahbn-service-header">
+				<div>
+					<h2 class="ahbn-service-title"><?php esc_html_e( 'Extra Services & Hospitality Add-ons', 'awesome-hotel-booking' ); ?></h2>
+					<p class="ahbn-service-subtitle">
+						<?php esc_html_e( 'Manage optional guest amenities, meal packages, airport logistics, and wellness experiences.', 'awesome-hotel-booking' ); ?>
+					</p>
+				</div>
+			</header>
+
+			<!-- Strategy KPI Cards -->
+			<div class="ahbn-stats-grid">
+				<div class="ahbn-stat-card">
+					<span class="ahbn-stat-label"><?php esc_html_e( 'Total Extra Services', 'awesome-hotel-booking' ); ?></span>
+					<span class="ahbn-stat-value"><?php echo esc_html( (string) $total_services ); ?></span>
+				</div>
+				<div class="ahbn-stat-card ahbn-stat-active-duty">
+					<span class="ahbn-stat-label"><?php esc_html_e( 'Active & Available', 'awesome-hotel-booking' ); ?></span>
+					<span class="ahbn-stat-value"><?php echo esc_html( (string) $active_services ); ?></span>
+				</div>
+				<div class="ahbn-stat-card ahbn-stat-gold">
+					<span class="ahbn-stat-label"><?php esc_html_e( 'Average Add-on Price', 'awesome-hotel-booking' ); ?></span>
+					<span class="ahbn-stat-value"><?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $avg_price ) : (string) number_format_i18n( $avg_price, 2 ) ); ?></span>
+				</div>
+			</div>
+
+			<!-- Services Table -->
+			<div class="ahbn-table-container">
+				<table class="ahbn-service-table widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Service / Add-on', 'awesome-hotel-booking' ); ?></th>
+							<th><?php esc_html_e( 'Price', 'awesome-hotel-booking' ); ?></th>
+							<th><?php esc_html_e( 'Billing Cycle / Model', 'awesome-hotel-booking' ); ?></th>
+							<th><?php esc_html_e( 'Description', 'awesome-hotel-booking' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'awesome-hotel-booking' ); ?></th>
+							<th style="text-align: right; width: 140px;"><?php esc_html_e( 'Actions', 'awesome-hotel-booking' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php if ( ! empty( $services ) ) : ?>
+							<?php foreach ( $services as $item ) :
+								$is_active    = ( 'publish' === $item->status );
+								$status_class = $is_active ? 'status-active-now' : 'status-disabled';
+								$status_label = $is_active ? __( 'Active', 'awesome-hotel-booking' ) : __( 'Disabled', 'awesome-hotel-booking' );
+								$charge_label = isset( $charge_types[ $item->charge_type ] ) ? $charge_types[ $item->charge_type ] : ucfirst( str_replace( '_', ' ', $item->charge_type ) );
+								$view_link    = add_query_arg( array( 'action' => 'view', 'service_id' => $item->id ), $base_service_url );
+								$edit_link    = add_query_arg( array( 'action' => 'edit', 'service_id' => $item->id ), $base_service_url );
+								?>
+								<tr>
+									<td>
+										<div style="display:flex; align-items:center; gap: 8px;">
+											<span class="dashicons dashicons-coffee" style="color: #c5a880;" aria-hidden="true"></span>
+											<strong style="color: #0a192f; font-size: 14px;"><?php echo esc_html( $item->name ); ?></strong>
+										</div>
+									</td>
+									<td>
+										<strong style="color: #059669; font-size: 15px; font-family: 'JetBrains Mono', monospace;">
+											<?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $item->price ) : (string) number_format_i18n( $item->price, 2 ) ); ?>
+										</strong>
+									</td>
+									<td>
+										<span class="ahbn-charge-badge">
+											<?php echo esc_html( $charge_label ); ?>
+										</span>
+									</td>
+									<td>
+										<span style="font-size: 12px; color: #64748b; line-height: 1.4;">
+											<?php echo esc_html( ! empty( $item->description ) ? wp_trim_words( $item->description, 12, '...' ) : '—' ); ?>
+										</span>
+									</td>
+									<td>
+										<span class="ahbn-status-pill <?php echo esc_attr( $status_class ); ?>">
+											<?php echo esc_html( $status_label ); ?>
+										</span>
+									</td>
+									<td style="text-align: right;">
+										<div class="ahbn-action-btns">
+											<!-- View Folio Button -->
+											<a href="<?php echo esc_url( $view_link ); ?>" class="ahbn-quick-btn" title="<?php esc_attr_e( 'View Service Folio', 'awesome-hotel-booking' ); ?>">
+												<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+											</a>
+
+											<!-- Edit Service Button -->
+											<a href="<?php echo esc_url( $edit_link ); ?>" class="ahbn-quick-btn" title="<?php esc_attr_e( 'Edit Extra Service', 'awesome-hotel-booking' ); ?>">
+												<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+											</a>
+
+											<!-- Delete Service Button -->
+											<form method="post" action="<?php echo esc_url( $base_service_url ); ?>" style="display: inline-block; margin: 0;" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this extra service?', 'awesome-hotel-booking' ) ); ?>');">
+												<?php wp_nonce_field( 'ahbn_delete_service_action', 'ahbn_del_service_nonce' ); ?>
+												<input type="hidden" name="del_service_id" value="<?php echo esc_attr( (string) $item->id ); ?>">
+												<button type="submit" name="ahbn_delete_service" class="ahbn-quick-btn is-delete" title="<?php esc_attr_e( 'Delete Extra Service', 'awesome-hotel-booking' ); ?>">
+													<span class="dashicons dashicons-trash" aria-hidden="true"></span>
+												</button>
+											</form>
+										</div>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						<?php else : ?>
+							<tr>
+								<td colspan="6" style="text-align: center; padding: 50px; color: #94a3b8;">
+									<span class="dashicons dashicons-coffee" style="font-size: 36px; width: 36px; height: 36px; color: #cbd5e1;" aria-hidden="true"></span>
+									<p style="margin: 8px 0 0;"><?php esc_html_e( 'No extra services or add-ons found. Click "Add Extra Service" to create one.', 'awesome-hotel-booking' ); ?></p>
+								</td>
+							</tr>
+						<?php endif; ?>
+					</tbody>
+				</table>
+			</div>
+
 		<?php endif; ?>
 	</div>
 
 	<style>
+		/* 1. Prevent WordPress default notices from leaking into the dark left sidebar */
+		.ahbn-sidebar-container .notice,
+		.ahbn-sidebar-container div.error,
+		.ahbn-sidebar-container div.updated {
+			display: none !important;
+		}
+
+		/* 2. Top Notice Area - Flush at Top Above Navigation Tabs */
+		.ahbn-top-notices-area {
+			margin-bottom: 18px;
+		}
+
+		.ahbn-top-notices-area:empty {
+			margin-bottom: 0;
+		}
+
+		/* Custom Dismissible Alert */
+		.ahbn-alert {
+			margin: 0 0 16px 0 !important;
+			padding: 12px 18px !important;
+			border-radius: 10px !important;
+			border-left: 4px solid transparent !important;
+			background: #ffffff !important;
+			box-shadow: 0 2px 10px rgba(10, 25, 47, 0.05) !important;
+			font-family: 'Plus Jakarta Sans', sans-serif !important;
+			font-size: 13px !important;
+			font-weight: 600 !important;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			animation: ahbnAlertFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+
+		@keyframes ahbnAlertFadeIn {
+			from { opacity: 0; transform: translateY(-6px); }
+			to   { opacity: 1; transform: translateY(0); }
+		}
+
+		.ahbn-alert-content {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.ahbn-alert-content .dashicons {
+			font-size: 18px;
+			width: 18px;
+			height: 18px;
+		}
+
+		.ahbn-alert-close {
+			background: none;
+			border: none;
+			font-size: 20px;
+			line-height: 1;
+			color: #94a3b8;
+			cursor: pointer;
+			padding: 0 0 0 12px;
+			transition: color 0.15s ease, transform 0.15s ease;
+		}
+
+		.ahbn-alert-close:hover {
+			color: #0f172a;
+			transform: scale(1.15);
+		}
+
+		.ahbn-alert-error {
+			border-left-color: #ef4444 !important;
+			background: #fff5f5 !important;
+			color: #991b1b !important;
+		}
+
+		.ahbn-alert-error .dashicons {
+			color: #ef4444 !important;
+		}
+
+		.ahbn-alert-success {
+			border-left-color: #10b981 !important;
+			background: #ecfdf5 !important;
+			color: #065f46 !important;
+		}
+
+		.ahbn-alert-success .dashicons {
+			color: #10b981 !important;
+		}
+
+		/* 3. Sub-tabs Navigation Bar */
 		.ahbn-subtabs-nav-bar {
 			display: inline-flex;
 			align-items: center;
@@ -230,6 +638,7 @@ function ahbn_extra_service_tab() {
 			gap: 20px;
 			font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 			color: #0f172a;
+			margin-top: 0 !important;
 		}
 
 		.ahbn-service-header {
@@ -521,6 +930,10 @@ function ahbn_extra_service_tab() {
 			color: #0a192f;
 		}
 
+		.font-mono {
+			font-family: 'JetBrains Mono', monospace !important;
+		}
+
 		@media (max-width: 1024px) {
 			.ahbn-stats-grid {
 				grid-template-columns: 1fr;
@@ -528,198 +941,15 @@ function ahbn_extra_service_tab() {
 		}
 	</style>
 
-	<div class="ahbn-service-wrap">
-		<?php if ( 'add' === $action || 'edit' === $action ) : ?>
-			<?php
-			$edit_service = null;
-			if ( 'edit' === $action && $service_id > 0 ) {
-				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$edit_service = $wpdb->get_row(
-					$wpdb->prepare( "SELECT * FROM {$table_services} WHERE id = %d", $service_id )
-				);
-				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			}
-			?>
-			<!-- Add / Edit Service Dedicated Panel -->
-			<div class="ahbn-panel" style="max-width: 720px; margin: 0 auto; width: 100%;">
-				<div class="ahbn-panel-head">
-					<span class="dashicons dashicons-coffee" aria-hidden="true"></span>
-					<h2>
-						<?php
-						if ( $edit_service ) {
-							/* translators: %s: service name */
-							printf( esc_html__( 'Edit Extra Service: %s', 'awesome-hotel-booking' ), esc_html( $edit_service->name ) );
-						} else {
-							esc_html_e( 'Register New Extra Service / Add-on', 'awesome-hotel-booking' );
-						}
-						?>
-					</h2>
-				</div>
-
-				<form method="post" action="<?php echo esc_url( $base_service_url ); ?>">
-					<?php wp_nonce_field( 'ahbn_save_service_action', 'ahbn_service_nonce' ); ?>
-					<input type="hidden" name="service_id" value="<?php echo esc_attr( (string) ( $edit_service ? $edit_service->id : 0 ) ); ?>">
-
-					<div class="ahbn-panel-body">
-						<div class="ahbn-field-group">
-							<label for="service_name" class="ahbn-label"><?php esc_html_e( 'Service / Amenity Name *', 'awesome-hotel-booking' ); ?></label>
-							<input type="text" name="name" id="service_name" class="ahbn-input" required value="<?php echo esc_attr( $edit_service ? $edit_service->name : '' ); ?>" placeholder="<?php esc_attr_e( 'e.g. Airport Shuttle, Buffet Breakfast, Spa Access', 'awesome-hotel-booking' ); ?>">
-						</div>
-
-						<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-							<div class="ahbn-field-group">
-								<label for="service_price" class="ahbn-label"><?php esc_html_e( 'Rate / Price *', 'awesome-hotel-booking' ); ?></label>
-								<input type="number" step="0.01" min="0" name="price" id="service_price" class="ahbn-input" required value="<?php echo esc_attr( (string) ( $edit_service ? $edit_service->price : '0.00' ) ); ?>" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
-							</div>
-
-							<div class="ahbn-field-group">
-								<label for="service_charge_type" class="ahbn-label"><?php esc_html_e( 'Charge Frequency Model', 'awesome-hotel-booking' ); ?></label>
-								<select name="charge_type" id="service_charge_type" class="ahbn-select">
-									<?php foreach ( $charge_types as $c_key => $c_label ) : ?>
-										<option value="<?php echo esc_attr( $c_key ); ?>" <?php selected( $edit_service ? $edit_service->charge_type : 'per_stay', $c_key ); ?>>
-											<?php echo esc_html( $c_label ); ?>
-										</option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-						</div>
-
-						<div class="ahbn-field-group">
-							<label for="service_status" class="ahbn-label"><?php esc_html_e( 'Availability Status', 'awesome-hotel-booking' ); ?></label>
-							<select name="status" id="service_status" class="ahbn-select">
-								<option value="publish" <?php selected( $edit_service ? $edit_service->status : 'publish', 'publish' ); ?>>
-									<?php esc_html_e( 'Active & Available for Guest Booking', 'awesome-hotel-booking' ); ?>
-								</option>
-								<option value="draft" <?php selected( $edit_service ? $edit_service->status : '', 'draft' ); ?>>
-									<?php esc_html_e( 'Hidden / Draft', 'awesome-hotel-booking' ); ?>
-								</option>
-							</select>
-						</div>
-
-						<div class="ahbn-field-group">
-							<label for="service_description" class="ahbn-label"><?php esc_html_e( 'Service Description / Inclusions', 'awesome-hotel-booking' ); ?></label>
-							<textarea name="description" id="service_description" rows="3" class="ahbn-textarea" placeholder="<?php esc_attr_e( 'Explain what is included with this service (e.g. One-way airport transfer in premium vehicle).', 'awesome-hotel-booking' ); ?>"><?php echo esc_textarea( $edit_service ? $edit_service->description : '' ); ?></textarea>
-						</div>
-					</div>
-
-					<div class="ahbn-panel-footer">
-						<a href="<?php echo esc_url( $base_service_url ); ?>" class="ahbn-btn-cancel">
-							<?php esc_html_e( 'Cancel', 'awesome-hotel-booking' ); ?>
-						</a>
-						<button type="submit" name="ahbn_save_service" class="ahbn-btn-save">
-							<?php echo $edit_service ? esc_html__( 'Update Extra Service', 'awesome-hotel-booking' ) : esc_html__( 'Save Extra Service', 'awesome-hotel-booking' ); ?>
-						</button>
-					</div>
-				</form>
-			</div>
-
-		<?php else : ?>
-
-			<!-- Header Toolbar (All Services View) -->
-			<header class="ahbn-service-header">
-				<div>
-					<h2 class="ahbn-service-title"><?php esc_html_e( 'Extra Services & Hospitality Add-ons', 'awesome-hotel-booking' ); ?></h2>
-					<p class="ahbn-service-subtitle">
-						<?php esc_html_e( 'Manage optional guest amenities, meal packages, airport logistics, and wellness experiences.', 'awesome-hotel-booking' ); ?>
-					</p>
-				</div>
-			</header>
-
-			<!-- Strategy KPI Cards -->
-			<div class="ahbn-stats-grid">
-				<div class="ahbn-stat-card">
-					<span class="ahbn-stat-label"><?php esc_html_e( 'Total Extra Services', 'awesome-hotel-booking' ); ?></span>
-					<span class="ahbn-stat-value"><?php echo esc_html( (string) $total_services ); ?></span>
-				</div>
-				<div class="ahbn-stat-card ahbn-stat-active-duty">
-					<span class="ahbn-stat-label"><?php esc_html_e( 'Active & Available', 'awesome-hotel-booking' ); ?></span>
-					<span class="ahbn-stat-value"><?php echo esc_html( (string) $active_services ); ?></span>
-				</div>
-				<div class="ahbn-stat-card ahbn-stat-gold">
-					<span class="ahbn-stat-label"><?php esc_html_e( 'Average Add-on Price', 'awesome-hotel-booking' ); ?></span>
-					<span class="ahbn-stat-value"><?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $avg_price ) : (string) number_format_i18n( $avg_price, 2 ) ); ?></span>
-				</div>
-			</div>
-
-			<!-- Services Table -->
-			<div class="ahbn-table-container">
-				<table class="ahbn-service-table widefat striped">
-					<thead>
-						<tr>
-							<th><?php esc_html_e( 'Service / Add-on', 'awesome-hotel-booking' ); ?></th>
-							<th><?php esc_html_e( 'Price', 'awesome-hotel-booking' ); ?></th>
-							<th><?php esc_html_e( 'Billing Cycle / Model', 'awesome-hotel-booking' ); ?></th>
-							<th><?php esc_html_e( 'Description', 'awesome-hotel-booking' ); ?></th>
-							<th><?php esc_html_e( 'Status', 'awesome-hotel-booking' ); ?></th>
-							<th style="text-align: right; width: 120px;"><?php esc_html_e( 'Actions', 'awesome-hotel-booking' ); ?></th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php if ( ! empty( $services ) ) : ?>
-							<?php foreach ( $services as $item ) :
-								$is_active = ( 'publish' === $item->status );
-								$status_class = $is_active ? 'status-active-now' : 'status-disabled';
-								$status_label = $is_active ? __( 'Active', 'awesome-hotel-booking' ) : __( 'Disabled', 'awesome-hotel-booking' );
-								$charge_label = isset( $charge_types[ $item->charge_type ] ) ? $charge_types[ $item->charge_type ] : ucfirst( str_replace( '_', ' ', $item->charge_type ) );
-								$edit_link    = add_query_arg( array( 'action' => 'edit', 'service_id' => $item->id ), $base_service_url );
-								?>
-								<tr>
-									<td>
-										<div style="display:flex; align-items:center; gap: 8px;">
-											<span class="dashicons dashicons-coffee" style="color: #c5a880;" aria-hidden="true"></span>
-											<strong style="color: #0a192f; font-size: 14px;"><?php echo esc_html( $item->name ); ?></strong>
-										</div>
-									</td>
-									<td>
-										<strong style="color: #059669; font-size: 15px; font-family: 'JetBrains Mono', monospace;">
-											<?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $item->price ) : (string) number_format_i18n( $item->price, 2 ) ); ?>
-										</strong>
-									</td>
-									<td>
-										<span class="ahbn-charge-badge">
-											<?php echo esc_html( $charge_label ); ?>
-										</span>
-									</td>
-									<td>
-										<span style="font-size: 12px; color: #64748b; line-height: 1.4;">
-											<?php echo esc_html( ! empty( $item->description ) ? wp_trim_words( $item->description, 12, '...' ) : '—' ); ?>
-										</span>
-									</td>
-									<td>
-										<span class="ahbn-status-pill <?php echo esc_attr( $status_class ); ?>">
-											<?php echo esc_html( $status_label ); ?>
-										</span>
-									</td>
-									<td style="text-align: right;">
-										<div class="ahbn-action-btns">
-											<a href="<?php echo esc_url( $edit_link ); ?>" class="ahbn-quick-btn" title="<?php esc_attr_e( 'Edit Extra Service', 'awesome-hotel-booking' ); ?>">
-												<span class="dashicons dashicons-edit" aria-hidden="true"></span>
-											</a>
-
-											<form method="post" action="<?php echo esc_url( $base_service_url ); ?>" style="display: inline-block; margin: 0;" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this extra service?', 'awesome-hotel-booking' ) ); ?>');">
-												<?php wp_nonce_field( 'ahbn_delete_service_action', 'ahbn_del_service_nonce' ); ?>
-												<input type="hidden" name="del_service_id" value="<?php echo esc_attr( (string) $item->id ); ?>">
-												<button type="submit" name="ahbn_delete_service" class="ahbn-quick-btn is-delete" title="<?php esc_attr_e( 'Delete Extra Service', 'awesome-hotel-booking' ); ?>">
-													<span class="dashicons dashicons-trash" aria-hidden="true"></span>
-												</button>
-											</form>
-										</div>
-									</td>
-								</tr>
-							<?php endforeach; ?>
-						<?php else : ?>
-							<tr>
-								<td colspan="6" style="text-align: center; padding: 50px; color: #94a3b8;">
-									<span class="dashicons dashicons-coffee" style="font-size: 36px; width: 36px; height: 36px; color: #cbd5e1;" aria-hidden="true"></span>
-									<p style="margin: 8px 0 0;"><?php esc_html_e( 'No extra services or add-ons found. Click "Add Extra Service" to create one.', 'awesome-hotel-booking' ); ?></p>
-								</td>
-							</tr>
-						<?php endif; ?>
-					</tbody>
-				</table>
-			</div>
-
-		<?php endif; ?>
-	</div>
+	<script type="text/javascript">
+	jQuery(document).ready(function($) {
+		$(document).on('click', '.ahbn-alert-close', function(e) {
+			e.preventDefault();
+			$(this).closest('.ahbn-alert').fadeOut(180, function() {
+				$(this).remove();
+			});
+		});
+	});
+	</script>
 	<?php
 }

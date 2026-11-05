@@ -73,19 +73,19 @@ function ahbn_account_shortcode_callback() {
 			if ( ! empty( $new_pass ) ) {
 				if ( $new_pass === $conf_pass ) {
 					wp_set_password( $new_pass, $user_id );
-					$ahbn_status_msg = '<div class="ahbn-alert success">' . esc_html__( 'Password updated. Please sign in again.', 'awesome-hotel-booking' ) . '</div>';
+					$ahbn_status_msg = '<div class="ahbn-alert success"><div class="ahbn-alert-content"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><span>' . esc_html__( 'Password updated. Please sign in again.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 				} else {
-					$ahbn_status_msg = '<div class="ahbn-alert error">' . esc_html__( 'Passwords do not match.', 'awesome-hotel-booking' ) . '</div>';
+					$ahbn_status_msg = '<div class="ahbn-alert error"><div class="ahbn-alert-content"><span class="dashicons dashicons-warning" aria-hidden="true"></span><span>' . esc_html__( 'Passwords do not match.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 				}
 			} else {
-				$ahbn_status_msg = '<div class="ahbn-alert success">' . esc_html__( 'Profile updated successfully.', 'awesome-hotel-booking' ) . '</div>';
+				$ahbn_status_msg = '<div class="ahbn-alert success"><div class="ahbn-alert-content"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><span>' . esc_html__( 'Profile updated successfully.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 			}
 
 			// Refresh user object and clear transient cache.
 			$current_user = wp_get_current_user();
 			delete_transient( 'ahbn_user_bookings_' . $user_id );
 		} else {
-			$ahbn_status_msg = '<div class="ahbn-alert error">' . esc_html__( 'Security verification failed. Please try again.', 'awesome-hotel-booking' ) . '</div>';
+			$ahbn_status_msg = '<div class="ahbn-alert error"><div class="ahbn-alert-content"><span class="dashicons dashicons-warning" aria-hidden="true"></span><span>' . esc_html__( 'Security verification failed. Please try again.', 'awesome-hotel-booking' ) . '</span></div><button type="button" class="ahbn-alert-close" aria-label="' . esc_attr__( 'Dismiss alert', 'awesome-hotel-booking' ) . '">&times;</button></div>';
 		}
 	}
 
@@ -103,9 +103,8 @@ function ahbn_account_shortcode_callback() {
 				"SELECT b.*, r.room_number, r.title AS room_title, r.room_type, r.thumbnail_id
 				 FROM {$table_bookings} b
 				 LEFT JOIN {$table_rooms} r ON b.room_id = r.id
-				 WHERE b.user_id = %d OR b.guest_email = %s
+				 WHERE b.guest_email = %s
 				 ORDER BY b.checkin_date DESC, b.id DESC",
-				$user_id,
 				$user_email
 			)
 		);
@@ -118,7 +117,9 @@ function ahbn_account_shortcode_callback() {
 	$total_spent = 0.0;
 	if ( ! empty( $ahbn_bookings ) ) {
 		foreach ( $ahbn_bookings as $booking ) {
-			$total_spent += (float) $booking->total_amount;
+			if ( 'cancelled' !== $booking->status ) {
+				$total_spent += (float) $booking->total_amount;
+			}
 		}
 	}
 
@@ -189,12 +190,12 @@ function ahbn_account_shortcode_callback() {
 				<?php if ( ! empty( $ahbn_bookings ) ) : ?>
 					<div class="ahbn-res-list">
 						<?php foreach ( $ahbn_bookings as $booking ) :
-							$status_val   = ! empty( $booking->status ) ? sanitize_key( $booking->status ) : 'pending';
-							$suite_title  = ! empty( $booking->room_title ) ? $booking->room_title : __( 'Luxury Suite', 'awesome-hotel-booking' );
+							$status_val  = ! empty( $booking->status ) ? sanitize_key( $booking->status ) : 'pending';
+							$suite_title = ! empty( $booking->room_title ) ? $booking->room_title : __( 'Luxury Suite', 'awesome-hotel-booking' );
 							if ( ! empty( $booking->room_number ) ) {
 								$suite_title = '#' . $booking->room_number . ' ' . $suite_title;
 							}
-							$total_clean  = (float) $booking->total_amount;
+							$total_clean = (float) $booking->total_amount;
 							
 							// Thumbnail URL
 							$thumb_url = '';
@@ -222,7 +223,7 @@ function ahbn_account_shortcode_callback() {
 								</div>
 								<div style="text-align:right;">
 									<div style="font-family:'JetBrains Mono',monospace; font-weight:800; color:#0a192f; font-size:16px; margin-bottom:6px;">
-										$<?php echo esc_html( number_format( $total_clean, 2 ) ); ?>
+										<?php echo esc_html( function_exists( 'ahbn_format_price' ) ? ahbn_format_price( $total_clean ) : '$' . number_format( $total_clean, 2 ) ); ?>
 									</div>
 									<span class="ahbn-status-badge status-<?php echo esc_attr( $status_val ); ?>">
 										<?php echo esc_html( ucfirst( str_replace( '_', ' ', $status_val ) ) ); ?>
@@ -402,25 +403,64 @@ function ahbn_account_shortcode_callback() {
 			display: block;
 		}
 
-		/* Alerts */
+		/* Alerts with dismiss close button */
 		.ahbn-alert {
-			padding: 12px 16px;
+			padding: 12px 18px;
 			border-radius: 8px;
 			font-size: 13px;
 			font-weight: 600;
 			margin-bottom: 24px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			animation: ahbnAlertFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+
+		@keyframes ahbnAlertFadeIn {
+			from { opacity: 0; transform: translateY(-4px); }
+			to   { opacity: 1; transform: translateY(0); }
+		}
+
+		.ahbn-alert-content {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.ahbn-alert-content .dashicons {
+			font-size: 18px;
+			width: 18px;
+			height: 18px;
+		}
+
+		.ahbn-alert-close {
+			background: none;
+			border: none;
+			font-size: 20px;
+			line-height: 1;
+			color: inherit;
+			opacity: 0.6;
+			cursor: pointer;
+			padding: 0 0 0 10px;
+			transition: opacity 0.15s ease;
+		}
+
+		.ahbn-alert-close:hover {
+			opacity: 1;
 		}
 
 		.ahbn-alert.success {
 			background: #ecfdf5;
 			color: #065f46;
 			border: 1px solid #a7f3d0;
+			border-left: 4px solid #10b981;
 		}
 
 		.ahbn-alert.error {
 			background: #fff1f2;
 			color: #9f1239;
 			border: 1px solid #fecdd3;
+			border-left: 4px solid #ef4444;
 		}
 
 		/* Dashboard Stats */
@@ -581,6 +621,20 @@ function ahbn_account_shortcode_callback() {
 					targetEl.classList.add('active');
 				}
 			});
+		});
+
+		// Dismissible alert handler
+		document.addEventListener('click', function(e) {
+			if (e.target.matches('.ahbn-alert-close')) {
+				e.preventDefault();
+				const alertBox = e.target.closest('.ahbn-alert');
+				if (alertBox) {
+					alertBox.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+					alertBox.style.opacity = '0';
+					alertBox.style.transform = 'translateY(-4px)';
+					setTimeout(() => alertBox.remove(), 200);
+				}
+			}
 		});
 	});
 	</script>

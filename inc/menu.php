@@ -34,7 +34,7 @@ add_action( 'admin_menu', 'ahbn_register_admin_menu' );
  */
 function ahbn_get_admin_menu_groups() {
 	return array(
-		'operations' => array(
+		'operations'     => array(
 			'title' => __( 'Operations', 'awesome-hotel-booking' ),
 			'items' => array(
 				'dashboard'    => array(
@@ -59,16 +59,12 @@ function ahbn_get_admin_menu_groups() {
 				),
 			),
 		),
-		'inventory'  => array(
+		'inventory'      => array(
 			'title' => __( 'Inventory', 'awesome-hotel-booking' ),
 			'items' => array(
 				'rooms'          => array(
 					'label' => __( 'Rooms', 'awesome-hotel-booking' ),
 					'icon'  => 'dashicons-building',
-				),
-				'pricing'        => array(
-					'label' => __( 'Pricing', 'awesome-hotel-booking' ),
-					'icon'  => 'dashicons-money-alt',
 				),
 				'coupons'        => array(
 					'label' => __( 'Coupons', 'awesome-hotel-booking' ),
@@ -80,7 +76,7 @@ function ahbn_get_admin_menu_groups() {
 				),
 			),
 		),
-		'finance'    => array(
+		'finance'        => array(
 			'title' => __( 'Finance & Guests', 'awesome-hotel-booking' ),
 			'items' => array(
 				'expense'   => array(
@@ -118,7 +114,7 @@ function ahbn_get_admin_menu_groups() {
 				),
 			),
 		),
-		'builders'   => array(
+		'builders'       => array(
 			'title' => __( 'Builders', 'awesome-hotel-booking' ),
 			'items' => array(
 				'elementor' => array(
@@ -152,7 +148,7 @@ function ahbn_main_page() {
 	?>
 	<style>
 		.wrap.awesome-hotel-booking {
-			margin: 20px 20px 0 0 !important;
+			margin: 0 20px 0 0 !important;
 			display: flex;
 			gap: 24px;
 			align-items: flex-start;
@@ -353,14 +349,23 @@ function ahbn_main_page() {
 		<?php if ( 'print' !== $action ) : ?>
 			<div class="ahbn-sidebar-container">
 				<div class="ahbn-brand-header">
-					<h2>
-						<span class="ahbn-brand-title-left">
-							<span class="dashicons dashicons-building" aria-hidden="true"></span>
-							<span><?php esc_html_e( 'Hotel Booking', 'awesome-hotel-booking' ); ?></span>
-						</span>
-						<span class="version-tag"><?php echo esc_html( 'v' . ( defined( 'AHBN_VERSION' ) ? AHBN_VERSION : '1.0.0' ) ); ?></span>
-					</h2>
-				</div>
+	<h2>
+		<span class="ahbn-brand-title-left">
+			<span class="dashicons dashicons-building" aria-hidden="true"></span>
+			<span><?php esc_html_e( 'Hotel Booking', 'awesome-hotel-booking' ); ?></span>
+		</span>
+		<div class="ahbn-brand-actions">
+			<button 
+				type="button" 
+				class="ahbn-toggle-wp-menu-btn" 
+				title="<?php esc_attr_e( 'Hide WordPress Menu', 'awesome-hotel-booking' ); ?>" 
+				aria-label="<?php esc_attr_e( 'Toggle WordPress Menu Visibility', 'awesome-hotel-booking' ); ?>"
+			>
+				<span class="dashicons dashicons-arrow-left-alt2" aria-hidden="true"></span>
+			</button>
+		</div>
+	</h2>
+</div>
 
 				<div class="ahbn-nav-scroll-wrapper">
 					<?php foreach ( $menu_groups as $group ) : ?>
@@ -437,14 +442,6 @@ function ahbn_main_page() {
 					}
 					break;
 
-				case 'pricing':
-					if ( function_exists( 'ahbn_pricing_tab' ) ) {
-						ahbn_pricing_tab();
-					} else {
-						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Pricing module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
-					}
-					break;
-
 				case 'coupons':
 					if ( function_exists( 'ahbn_coupons_tab' ) ) {
 						ahbn_coupons_tab();
@@ -454,15 +451,15 @@ function ahbn_main_page() {
 					break;
 
 				case 'extra_services':
-					$addons_file = defined( 'AHBN_PATH' ) ? AHBN_PATH . 'admin/extra_service.php' : plugin_dir_path( __FILE__ ) . 'extra_service.php';
+					$addons_file = defined( 'AHBN_PATH' ) ? AHBN_PATH . 'admin/extra-services.php' : plugin_dir_path( __FILE__ ) . 'extra-services.php';
 					if ( file_exists( $addons_file ) ) {
 						require_once $addons_file;
 					}
 
-					if ( function_exists( 'ahbn_extra_service_tab' ) ) {
-						ahbn_extra_service_tab();
-					} elseif ( function_exists( 'ahbn_extra_services_tab' ) ) {
+					if ( function_exists( 'ahbn_extra_services_tab' ) ) {
 						ahbn_extra_services_tab();
+					} elseif ( function_exists( 'ahbn_extra_service_tab' ) ) {
+						ahbn_extra_service_tab();
 					} else {
 						echo '<div class="notice notice-info inline"><p>' . esc_html__( 'Services module is ready to be initialized.', 'awesome-hotel-booking' ) . '</p></div>';
 					}
@@ -523,13 +520,33 @@ function ahbn_main_page() {
 					break;
 
 				case 'elementor':
-					$elementor_file = defined( 'AHBN_PATH' ) ? AHBN_PATH . 'admin/builders/elementor-settings.php' : plugin_dir_path( __FILE__ ) . 'builders/elementor-settings.php';
-					if ( file_exists( $elementor_file ) ) {
-						require_once $elementor_file;
+					$possible_paths = array(
+						defined( 'AHBN_PATH' ) ? AHBN_PATH . 'admin/elementor.php' : '',
+						defined( 'AHBN_PATH' ) ? AHBN_PATH . 'admin/builders/elementor-settings.php' : '',
+						plugin_dir_path( __FILE__ ) . '../admin/elementor.php',
+					);
+
+					foreach ( $possible_paths as $file_path ) {
+						if ( ! empty( $file_path ) && file_exists( $file_path ) ) {
+							require_once $file_path;
+							break;
+						}
 					}
 
 					if ( function_exists( 'ahbn_elementor_settings_tab' ) ) {
 						ahbn_elementor_settings_tab();
+					} else {
+						?>
+						<div style="text-align: center; padding: 40px 20px;">
+							<span class="dashicons dashicons-welcome-widgets-menus" style="font-size: 42px; width: 42px; height: 42px; color: #c5a880;"></span>
+							<h3 style="font-family: 'Playfair Display', Georgia, serif; color: #0a192f; margin: 12px 0 6px;">
+								<?php esc_html_e( 'Elementor Builder Addon Pack', 'awesome-hotel-booking' ); ?>
+							</h3>
+							<p style="color: #64748b; font-size: 13px; max-width: 500px; margin: 0 auto;">
+								<?php esc_html_e( 'Native Elementor widgets for room grids, availability search, and booking forms are coming soon in the next update.', 'awesome-hotel-booking' ); ?>
+							</p>
+						</div>
+						<?php
 					}
 					break;
 
@@ -541,6 +558,18 @@ function ahbn_main_page() {
 
 					if ( function_exists( 'ahbn_gutenberg_settings_tab' ) ) {
 						ahbn_gutenberg_settings_tab();
+					} else {
+						?>
+						<div style="text-align: center; padding: 40px 20px;">
+							<span class="dashicons dashicons-block-default" style="font-size: 42px; width: 42px; height: 42px; color: #c5a880;"></span>
+							<h3 style="font-family: 'Playfair Display', Georgia, serif; color: #0a192f; margin: 12px 0 6px;">
+								<?php esc_html_e( 'Gutenberg Blocks Addon Pack', 'awesome-hotel-booking' ); ?>
+							</h3>
+							<p style="color: #64748b; font-size: 13px; max-width: 500px; margin: 0 auto;">
+								<?php esc_html_e( 'Block editor support for hotel reservation engines is under active development.', 'awesome-hotel-booking' ); ?>
+							</p>
+						</div>
+						<?php
 					}
 					break;
 

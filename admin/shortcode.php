@@ -4,7 +4,7 @@
  *
  * Built with Champagne Gold & Deep Navy enterprise UI system.
  * Features: Multi-tiered cross-browser clipboard copy, visual toast confirmation,
- * button state feedback, and structured shortcode directory.
+ * button state feedback, zero top space, and no unwanted scrollbars.
  *
  * @package AwesomeHotelBooking
  */
@@ -28,53 +28,59 @@ function ahbn_shortcode_tab() {
 			array(
 				'title' => __( 'Header Auth & Profile Button', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_header_auth]',
-				'desc'  => __( 'Displays guest greeting, account balance, and avatar for logged-in users, or Login/Register modal triggers for visitors.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Displays guest greeting, account balance, and avatar for logged-in users, or Login/Register triggers for visitors.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Site Header / Navigation Bar', 'awesome-hotel-booking' ),
 			),
 		),
 		'Booking & Reservation Flow' => array(
 			array(
-				'title' => __( 'Search & Reservation Filter Bar', 'awesome-hotel-booking' ),
-				'code'  => '[ahbn_search_form]',
-				'desc'  => __( 'Horizontal or stacked search widget for check-in/out dates, room type dropdowns, and guest counters.', 'awesome-hotel-booking' ),
-				'page'  => __( 'Home Page / Hero Section', 'awesome-hotel-booking' ),
+				'title' => __( 'Live Search & Date Availability Bar', 'awesome-hotel-booking' ),
+				'code'  => '[ahbn_search_bar]',
+				'desc'  => __( 'Interactive check-in/out date picker, category dropdown, and guest counters with live SQL availability lookup.', 'awesome-hotel-booking' ),
+				'page'  => __( 'Home Page / Hero Banner', 'awesome-hotel-booking' ),
 			),
 			array(
-				'title' => __( 'All Rooms Directory Grid', 'awesome-hotel-booking' ),
+				'title' => __( 'All Rooms Inventory Grid', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_all_rooms]',
-				'desc'  => __( 'Displays published room inventory in an interactive responsive grid with live category filters, pricing, and booking buttons.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Displays published suites from wp_ahbn_rooms with JSON amenities, dynamic pricing, and occupancy badges.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Rooms / Suites Archive Page', 'awesome-hotel-booking' ),
 			),
 			array(
-				'title' => __( 'Single Room Booking Card', 'awesome-hotel-booking' ),
-				'code'  => '[ahbn_room_card id="1"]',
-				'desc'  => __( 'Embeds a dedicated reservation card for a specific suite. Replace "1" with your database room ID.', 'awesome-hotel-booking' ),
-				'page'  => __( 'Custom Landing Pages / Blog Posts', 'awesome-hotel-booking' ),
+				'title' => __( 'Single Suite Showcase & Booking', 'awesome-hotel-booking' ),
+				'code'  => '[ahbn_room_details id="1"]',
+				'desc'  => __( 'Embeds a dedicated luxury suite profile with photo carousel and specifications. Replace "1" with target room ID.', 'awesome-hotel-booking' ),
+				'page'  => __( 'Single Suite Page / Custom Landing Pages', 'awesome-hotel-booking' ),
 			),
 			array(
-				'title' => __( 'Checkout & Reservation Confirmation', 'awesome-hotel-booking' ),
+				'title' => __( 'Reservation Checkout & Payment Funnel', 'awesome-hotel-booking' ),
+				'code'  => '[ahbn_checkout]',
+				'desc'  => __( 'Step-by-step guest checkout: attaches paid add-on services, validates coupon promo codes, and confirms bookings.', 'awesome-hotel-booking' ),
+				'page'  => __( 'Checkout Page', 'awesome-hotel-booking' ),
+			),
+			array(
+				'title' => __( 'Confirmation & Invoice Folio', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_thanks]',
-				'desc'  => __( 'Displays reservation confirmation, booking code, check-in dates, and printable invoice summary upon successful booking.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Displays booking confirmation code, check-in instructions, and printable breakdown receipt upon successful reservation.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Thank You / Confirmation Page', 'awesome-hotel-booking' ),
 			),
 		),
 		'Guest CRM & Authentication' => array(
 			array(
-				'title' => __( 'Guest Login Portal', 'awesome-hotel-booking' ),
+				'title' => __( 'AJAX Guest Login Portal', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_login]',
-				'desc'  => __( 'AJAX-powered customer login form that validates credentials and redirects to the account dashboard.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Instant AJAX customer login card that authenticates credentials and redirects guests into their portal.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Login Page', 'awesome-hotel-booking' ),
 			),
 			array(
 				'title' => __( 'Guest Registration Portal', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_register]',
-				'desc'  => __( 'Member sign-up form with contact verification, automated role assignment, and CRM synchronization.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Member sign-up form with password verification, instant auto-login, and billing profile assignment.', 'awesome-hotel-booking' ),
 				'page'  => __( 'Registration Page', 'awesome-hotel-booking' ),
 			),
 			array(
 				'title' => __( 'Customer Dashboard & History', 'awesome-hotel-booking' ),
 				'code'  => '[ahbn_account]',
-				'desc'  => __( 'Self-service guest portal where clients view upcoming bookings, stay invoices, and edit profile details.', 'awesome-hotel-booking' ),
+				'desc'  => __( 'Self-service guest portal with stay history from wp_ahbn_bookings, profile details editor, and password reset tab.', 'awesome-hotel-booking' ),
 				'page'  => __( 'My Account Page', 'awesome-hotel-booking' ),
 			),
 		),
@@ -100,7 +106,7 @@ function ahbn_shortcode_tab() {
 					}
 					printf(
 						/* translators: %d: number of shortcodes */
-						esc_html__( '%d Production Ready Shortcodes', 'awesome-hotel-booking' ),
+						esc_html__( '%d Production Shortcodes', 'awesome-hotel-booking' ),
 						absint( $total_shortcodes )
 					);
 					?>
@@ -162,30 +168,41 @@ function ahbn_shortcode_tab() {
 	</div>
 
 	<style>
+		/* Flush-top and prevent horizontal scrollbars */
 		.ahbn-shortcode-wrap {
+			margin-top: 0 !important;
+			max-width: 1140px;
+			margin-left: auto;
+			margin-right: auto;
 			display: flex;
 			flex-direction: column;
-			gap: 24px;
+			gap: 20px;
 			font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 			color: #0f172a;
+			box-sizing: border-box;
+			overflow-x: hidden;
+		}
+
+		.ahbn-shortcode-wrap * {
+			box-sizing: border-box;
 		}
 
 		.ahbn-shortcode-header {
 			background: #ffffff;
 			border: 1px solid #e2e8f0;
-			border-radius: 16px;
-			padding: 22px 28px;
+			border-radius: 14px;
+			padding: 20px 24px;
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
 			flex-wrap: wrap;
-			gap: 16px;
+			gap: 14px;
 			box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 		}
 
 		.ahbn-shortcode-title {
 			font-family: 'Playfair Display', Georgia, serif;
-			font-size: 24px;
+			font-size: 22px;
 			font-weight: 700;
 			color: #0a192f;
 			margin: 0 0 4px;
@@ -213,9 +230,9 @@ function ahbn_shortcode_tab() {
 
 		.ahbn-code-counter-badge .dashicons {
 			color: #c5a880;
-			font-size: 16px;
-			width: 16px;
-			height: 16px;
+			font-size: 15px;
+			width: 15px;
+			height: 15px;
 		}
 
 		.ahbn-shortcode-section {
@@ -228,18 +245,17 @@ function ahbn_shortcode_tab() {
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			margin-bottom: 2px;
 		}
 
 		.ahbn-section-heading-wrap .dashicons {
 			color: #c5a880;
-			font-size: 17px;
-			width: 17px;
-			height: 17px;
+			font-size: 16px;
+			width: 16px;
+			height: 16px;
 		}
 
 		.ahbn-section-title {
-			font-size: 13px;
+			font-size: 12px;
 			font-weight: 800;
 			text-transform: uppercase;
 			letter-spacing: 0.06em;
@@ -256,8 +272,8 @@ function ahbn_shortcode_tab() {
 		.ahbn-shortcode-card {
 			background: #ffffff;
 			border: 1px solid #e2e8f0;
-			border-radius: 14px;
-			padding: 22px;
+			border-radius: 12px;
+			padding: 20px;
 			display: flex;
 			flex-direction: column;
 			justify-content: space-between;
@@ -267,20 +283,20 @@ function ahbn_shortcode_tab() {
 
 		.ahbn-shortcode-card:hover {
 			border-color: #cbd5e1;
-			box-shadow: 0 6px 18px rgba(10, 25, 47, 0.06);
+			box-shadow: 0 4px 14px rgba(10, 25, 47, 0.05);
 			transform: translateY(-2px);
 		}
 
 		.ahbn-card-title {
 			margin: 0 0 6px 0;
-			font-size: 16px;
+			font-size: 15px;
 			font-weight: 700;
 			color: #0a192f;
 		}
 
 		.ahbn-card-desc {
-			margin: 0 0 18px 0;
-			font-size: 13px;
+			margin: 0 0 16px 0;
+			font-size: 12px;
 			line-height: 1.5;
 			color: #64748b;
 		}
@@ -303,7 +319,7 @@ function ahbn_shortcode_tab() {
 
 		.ahbn-code-text {
 			font-family: 'JetBrains Mono', monospace !important;
-			font-size: 13px !important;
+			font-size: 12px !important;
 			font-weight: 700 !important;
 			color: #0a192f !important;
 			background: transparent !important;
@@ -319,17 +335,17 @@ function ahbn_shortcode_tab() {
 			border: 1px solid #cbd5e1;
 			color: #334155;
 			border-radius: 6px;
-			padding: 5px 10px;
+			padding: 4px 10px;
 			font-size: 11px;
 			font-weight: 700;
 			cursor: pointer;
-			transition: all 0.2s ease;
+			transition: all 0.15s ease;
 		}
 
 		.ahbn-copy-action-btn .dashicons {
-			font-size: 14px;
-			width: 14px;
-			height: 14px;
+			font-size: 13px;
+			width: 13px;
+			height: 13px;
 		}
 
 		.ahbn-copy-action-btn:hover {
@@ -370,26 +386,26 @@ function ahbn_shortcode_tab() {
 		.ahbn-copy-toast {
 			display: none;
 			position: fixed;
-			bottom: 28px;
-			right: 28px;
+			bottom: 24px;
+			right: 24px;
 			background: #0a192f;
 			color: #ffffff;
 			border: 1px solid #c5a880;
-			padding: 12px 20px;
-			border-radius: 10px;
-			font-size: 13px;
+			padding: 10px 18px;
+			border-radius: 8px;
+			font-size: 12px;
 			font-weight: 700;
 			z-index: 999999;
-			box-shadow: 0 10px 25px rgba(10, 25, 47, 0.25);
+			box-shadow: 0 8px 20px rgba(10, 25, 47, 0.25);
 			align-items: center;
 			gap: 8px;
 		}
 
 		.ahbn-copy-toast .dashicons {
 			color: #10b981;
-			font-size: 18px;
-			width: 18px;
-			height: 18px;
+			font-size: 16px;
+			width: 16px;
+			height: 16px;
 		}
 
 		@media (max-width: 600px) {
@@ -414,7 +430,7 @@ function ahbn_shortcode_tab() {
 
 			var textToCopy = $target.text().trim();
 
-			// Method 1: Modern Async Clipboard API (for HTTPS or localhost)
+			// Async Clipboard API (Secure Contexts)
 			if (navigator.clipboard && window.isSecureContext) {
 				navigator.clipboard.writeText(textToCopy).then(function() {
 					triggerCopyFeedback($btn);
@@ -422,7 +438,7 @@ function ahbn_shortcode_tab() {
 					fallbackCopy(textToCopy, $btn);
 				});
 			} else {
-				// Method 2: Synchronous DOM fallback for HTTP/local IPs
+				// Fallback for non-SSL/local domains
 				fallbackCopy(textToCopy, $btn);
 			}
 		});
@@ -446,20 +462,18 @@ function ahbn_shortcode_tab() {
 					triggerCopyFeedback($btn);
 				}
 			} catch (err) {
-				// Silent fail
+				// Silently fail
 			}
 
 			document.body.removeChild(textArea);
 		}
 
 		function triggerCopyFeedback($btn) {
-			// Toast Animation
 			var $toast = $('#ahbn-toast');
 			if ($toast.length) {
-				$toast.stop(true, true).css('display', 'inline-flex').hide().fadeIn(150).delay(2000).fadeOut(250);
+				$toast.stop(true, true).css('display', 'inline-flex').hide().fadeIn(150).delay(1800).fadeOut(250);
 			}
 
-			// In-button temporary visual feedback
 			var $label = $btn.find('.ahbn-copy-btn-label');
 			var originalText = $label.text();
 
@@ -473,7 +487,7 @@ function ahbn_shortcode_tab() {
 			setTimeout(function() {
 				$label.text(originalText);
 				$btn.removeAttr('style');
-			}, 1800);
+			}, 1600);
 		}
 	});
 	</script>

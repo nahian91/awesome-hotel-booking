@@ -35,37 +35,43 @@ function ahbn_all_rooms_shortcode_callback( $atts = array() ) {
 
 	$table_rooms = $wpdb->prefix . 'ahbn_rooms';
 
-	// 1. Build Secure Direct Database Query.
-	$where_clauses = array( "status = 'publish'" );
-	$params        = array();
+	// 1. Sanitize ORDER BY and ORDER against strict whitelists.
+	$allowed_order_by = array(
+		'menu_order'      => 'menu_order',
+		'price_per_night' => 'price_per_night',
+		'id'              => 'id',
+		'title'           => 'title',
+	);
+	$order_by = isset( $allowed_order_by[ $atts['order_by'] ] ) ? $allowed_order_by[ $atts['order_by'] ] : 'menu_order';
+	$order    = 'DESC' === strtoupper( $atts['order'] ) ? 'DESC' : 'ASC';
+
+	// 2. Build Prepared Query & Parameters.
+	$query_params = array();
+
+	// Accept 'publish', empty string, or NULL so rooms without explicit status still display.
+	$where_sql = "(status = 'publish' OR status = '' OR status IS NULL)";
 
 	if ( ! empty( $atts['room_type'] ) ) {
-		$where_clauses[] = 'room_type = %s';
-		$params[]        = sanitize_text_field( $atts['room_type'] );
+		$where_sql     .= ' AND room_type = %s';
+		$query_params[] = sanitize_text_field( $atts['room_type'] );
 	}
 
-	$where_sql = 'WHERE ' . implode( ' AND ', $where_clauses );
-
-	// Sanitize ORDER BY and ORDER.
-	$allowed_order_by = array( 'menu_order', 'price_per_night', 'id', 'title' );
-	$order_by         = in_array( $atts['order_by'], $allowed_order_by, true ) ? $atts['order_by'] : 'menu_order';
-	$order            = 'DESC' === strtoupper( $atts['order'] ) ? 'DESC' : 'ASC';
-
-	$limit_sql = '';
-	$limit     = (int) $atts['limit'];
+	$limit_clause = '';
+	$limit        = (int) $atts['limit'];
 	if ( $limit > 0 ) {
-		$limit_sql = $wpdb->prepare( ' LIMIT %d', $limit );
+		$limit_clause   = ' LIMIT %d';
+		$query_params[] = $limit;
 	}
 
-	$sql = "SELECT * FROM {$table_rooms} {$where_sql} ORDER BY {$order_by} {$order}{$limit_sql}";
-
-	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-	if ( ! empty( $params ) ) {
-		$rooms = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+	if ( ! empty( $query_params ) ) {
+		$prepared_query = $wpdb->prepare( "SELECT * FROM {$table_rooms} WHERE {$where_sql} ORDER BY {$order_by} {$order}{$limit_clause}", $query_params );
 	} else {
-		$rooms = $wpdb->get_results( $sql );
+		$prepared_query = "SELECT * FROM {$table_rooms} WHERE {$where_sql} ORDER BY {$order_by} {$order}";
 	}
-	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+	$rooms = $wpdb->get_results( $prepared_query );
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 	if ( empty( $rooms ) ) {
 		return '<div class="ahbn-empty-state">
@@ -74,7 +80,7 @@ function ahbn_all_rooms_shortcode_callback( $atts = array() ) {
 				</div>';
 	}
 
-	// Columns Class
+	// Columns Class.
 	$columns_class = 'ahbn-grid-3';
 	if ( 2 === (int) $atts['columns'] ) {
 		$columns_class = 'ahbn-grid-2';
@@ -90,19 +96,19 @@ function ahbn_all_rooms_shortcode_callback( $atts = array() ) {
 			foreach ( $rooms as $room ) :
 				$rid         = (int) $room->id;
 				$room_number = $room->room_number;
-				$title       = $room->title;
+				$title       = ! empty( $room->title ) ? $room->title : sprintf( __( 'Suite #%s', 'awesome-hotel-booking' ), $room_number );
 				$slug        = ! empty( $room->slug ) ? $room->slug : sanitize_title( $title );
 				$room_type   = ! empty( $room->room_type ) ? $room->room_type : __( 'Standard', 'awesome-hotel-booking' );
 				$price       = (float) $room->price_per_night;
 				$max_guests  = (int) $room->max_adults + (int) $room->max_children;
 
-				// Permalink Resolution (Custom rewrite or query fallback).
-				$details_link = home_url( '/rooms/' . $slug . '/' );
+				// Permalink Resolution.
+				$details_link = home_url( '/room-details/' . $slug . '/' );
 
-				// Amenities Parsing (Decodes JSON from database seeder).
+				// Amenities Parsing.
 				$amenities = array();
 				if ( ! empty( $room->amenities ) ) {
-					$decoded = json_decode( $room->amenities, true );
+					$decoded   = json_decode( $room->amenities, true );
 					$amenities = is_array( $decoded ) ? $decoded : array_filter( array_map( 'trim', explode( ',', $room->amenities ) ) );
 				}
 

@@ -3,7 +3,7 @@
  * Plugin Name:       Awesome Hotel Booking
  * Plugin URI:        https://devnahian.com
  * Description:       Enterprise Hotel Booking & Hospitality Management Engine built on high-performance custom relational database tables.
- * Version:           2.5.0
+ * Version:           1.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Abdullah Nahian
@@ -23,8 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define Plugin Constants.
  */
-define( 'AHBN_VERSION', '2.5.0' );
-define( 'AHBN_DB_VERSION', '2.5.0' );
+define( 'AHBN_VERSION', '1.1' );
+define( 'AHBN_DB_VERSION', '1.1' );
 define( 'AHBN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'AHBN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -55,6 +55,7 @@ if ( ! function_exists( 'ahbn_format_price' ) ) {
 	}
 }
 
+
 /*--------------------------------------------------------------
 # 3. Rewrite Rules & Query Variables
 --------------------------------------------------------------*/
@@ -65,8 +66,8 @@ if ( ! function_exists( 'ahbn_format_price' ) ) {
  */
 function ahbn_core_rewrites() {
 	add_rewrite_rule(
-		'^ahbn-room-details/([^/]+)/?',
-		'index.php?pagename=ahbn-room-details&ahbn_room_name=$matches[1]',
+		'^room-details/([^/]+)/?',
+		'index.php?pagename=room-details&ahbn_room_name=$matches[1]',
 		'top'
 	);
 }
@@ -114,15 +115,15 @@ foreach ( $ahbn_includes as $ahbn_file ) {
 }
 
 /*--------------------------------------------------------------
-# 5. Icon-Only Full-Screen Canvas & Toggle Routine
+# 5. Hide WP Admin Menu Toggle Routine
 --------------------------------------------------------------*/
 /**
- * Inject Icon-Only Full-Screen Toggle on AHBN Admin Pages.
+ * Inject the styles and logic to collapse/hide the WP admin menu.
  *
  * @param string $hook_suffix Current admin page hook.
  * @return void
  */
-function ahbn_admin_fullscreen_canvas( $hook_suffix ) {
+function ahbn_toggle_wp_menu_script( $hook_suffix ) {
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
 	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
@@ -131,105 +132,90 @@ function ahbn_admin_fullscreen_canvas( $hook_suffix ) {
 		return;
 	}
 
-	$is_fullscreen = (bool) get_option( 'ahbn_admin_fullscreen', 0 );
+	$is_hidden = (bool) get_option( 'ahbn_hide_wp_menu', 0 );
 	?>
-	<style id="ahbn-fullscreen-styles">
-		/* Icon-Only Floating Toggle Button */
-		.ahbn-fs-icon-btn {
-			position: fixed;
-			top: 38px;
-			right: 25px;
-			z-index: 999999;
-			width: 36px;
-			height: 36px;
-			background: #0a192f;
+	<style id="ahbn-hide-wp-menu-styles">
+		/* Header Action Bar inside Brand Card */
+		.ahbn-brand-actions {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+		}
+
+		/* Embedded Header Icon Button */
+		.ahbn-toggle-wp-menu-btn {
+			width: 24px;
+			height: 24px;
+			background: rgba(197, 168, 128, 0.12);
 			color: #c5a880 !important;
-			border: 1px solid #c5a880;
-			border-radius: 8px;
+			border: 1px solid rgba(197, 168, 128, 0.28);
+			border-radius: 6px;
 			cursor: pointer;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
 			padding: 0;
-			box-shadow: 0 4px 12px rgba(10, 25, 47, 0.25);
 			transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 		}
-		.ahbn-fs-icon-btn:hover {
+
+		.ahbn-toggle-wp-menu-btn:hover {
 			background: #c5a880;
 			color: #0a192f !important;
-			transform: scale(1.05);
+			transform: scale(1.08);
 		}
-		.ahbn-fs-icon-btn .dashicons {
-			font-size: 18px;
-			width: 18px;
-			height: 18px;
+
+		.ahbn-toggle-wp-menu-btn .dashicons {
+			font-size: 14px;
+			width: 14px;
+			height: 14px;
 			line-height: 1;
 		}
 
-		/* Fullscreen Mode Overrides */
-		body.ahbn-fullscreen-mode #adminmenumain,
-		body.ahbn-fullscreen-mode #wpadminbar,
-		body.ahbn-fullscreen-mode #wpfooter {
+		/* When WordPress Menu is Hidden */
+		body.ahbn-wp-menu-hidden #adminmenumain,
+		body.ahbn-wp-menu-hidden #adminmenuback,
+		body.ahbn-wp-menu-hidden #adminmenuwrap {
 			display: none !important;
 		}
-		body.ahbn-fullscreen-mode #wpcontent,
-		body.ahbn-fullscreen-mode #wpbody-content {
+
+		body.ahbn-wp-menu-hidden #wpcontent {
 			margin-left: 0 !important;
-			padding: 24px 32px !important;
-			width: 100vw !important;
-			min-height: 100vh !important;
-			box-sizing: border-box !important;
-		}
-		body.ahbn-fullscreen-mode html.wp-toolbar {
-			padding-top: 0 !important;
-		}
-		body.ahbn-fullscreen-mode .ahbn-fs-icon-btn {
-			top: 18px;
-			right: 25px;
+			padding-left: 20px !important;
 		}
 	</style>
 
 	<script type="text/javascript">
 	(function($) {
 		$(document).ready(function() {
-			const isFs = <?php echo $is_fullscreen ? 'true' : 'false'; ?>;
-			if (isFs) {
-				$('body').addClass('ahbn-fullscreen-mode');
+			var isHidden = <?php echo $is_hidden ? 'true' : 'false'; ?>;
+			if (isHidden) {
+				$('body').addClass('ahbn-wp-menu-hidden');
+				$('.ahbn-toggle-wp-menu-btn .dashicons')
+					.removeClass('dashicons-arrow-left-alt2')
+					.addClass('dashicons-menu-alt3');
+				$('.ahbn-toggle-wp-menu-btn').attr('title', '<?php echo esc_js( __( 'Show WordPress Menu', 'awesome-hotel-booking' ) ); ?>');
 			}
 
-			const isNowFs = $('body').hasClass('ahbn-fullscreen-mode');
-			const iconClass = isNowFs ? 'dashicons-fullscreen-exit-alt' : 'dashicons-fullscreen-alt';
-			const tooltipText = isNowFs 
-				? '<?php echo esc_js( __( 'Exit Fullscreen', 'awesome-hotel-booking' ) ); ?>' 
-				: '<?php echo esc_js( __( 'Enter Fullscreen', 'awesome-hotel-booking' ) ); ?>';
-
-			const $btn = $('<button/>', {
-				type: 'button',
-				class: 'ahbn-fs-icon-btn',
-				title: tooltipText,
-				'aria-label': tooltipText,
-				html: '<span class="dashicons ' + iconClass + '" aria-hidden="true"></span>'
-			}).appendTo('body');
-
-			$btn.on('click', function(e) {
+			$(document).on('click', '.ahbn-toggle-wp-menu-btn', function(e) {
 				e.preventDefault();
-				$('body').toggleClass('ahbn-fullscreen-mode');
-				const active = $('body').hasClass('ahbn-fullscreen-mode') ? 1 : 0;
+				$('body').toggleClass('ahbn-wp-menu-hidden');
+				var active = $('body').hasClass('ahbn-wp-menu-hidden') ? 1 : 0;
 
-				const nextIcon = active ? 'dashicons-fullscreen-exit-alt' : 'dashicons-fullscreen-alt';
-				const nextTooltip = active 
-					? '<?php echo esc_js( __( 'Exit Fullscreen', 'awesome-hotel-booking' ) ); ?>' 
-					: '<?php echo esc_js( __( 'Enter Fullscreen', 'awesome-hotel-booking' ) ); ?>';
+				var nextIcon  = active ? 'dashicons-menu-alt3' : 'dashicons-arrow-left-alt2';
+				var nextTitle = active 
+					? '<?php echo esc_js( __( 'Show WordPress Menu', 'awesome-hotel-booking' ) ); ?>' 
+					: '<?php echo esc_js( __( 'Hide WordPress Menu', 'awesome-hotel-booking' ) ); ?>';
 
-				$btn.attr('title', nextTooltip)
-					.attr('aria-label', nextTooltip)
-					.html('<span class="dashicons ' + nextIcon + '" aria-hidden="true"></span>');
+				$(this).attr('title', nextTitle)
+					.attr('aria-label', nextTitle)
+					.find('.dashicons')
+					.removeClass('dashicons-menu-alt3 dashicons-arrow-left-alt2')
+					.addClass(nextIcon);
 
-				// Persist preference via AJAX
 				$.post(ajaxurl, {
-					action: 'ahbn_save_fullscreen_pref',
+					action: 'ahbn_save_wp_menu_toggle',
 					status: active,
-					security: '<?php echo esc_js( wp_create_nonce( 'ahbn_fs_nonce' ) ); ?>'
+					security: '<?php echo esc_js( wp_create_nonce( 'ahbn_wp_menu_nonce' ) ); ?>'
 				});
 			});
 		});
@@ -237,25 +223,25 @@ function ahbn_admin_fullscreen_canvas( $hook_suffix ) {
 	</script>
 	<?php
 }
-add_action( 'admin_head', 'ahbn_admin_fullscreen_canvas' );
+add_action( 'admin_head', 'ahbn_toggle_wp_menu_script' );
 
 /**
- * Handle AJAX request to store full-screen preference.
+ * Handle AJAX request to store WP menu visibility preference.
  *
  * @return void
  */
-function ahbn_save_fullscreen_preference() {
-	check_ajax_referer( 'ahbn_fs_nonce', 'security' );
+function ahbn_save_wp_menu_toggle_preference() {
+	check_ajax_referer( 'ahbn_wp_menu_nonce', 'security' );
 
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_send_json_error( esc_html__( 'Unauthorized', 'awesome-hotel-booking' ) );
 	}
 
 	$status = isset( $_POST['status'] ) ? absint( $_POST['status'] ) : 0;
-	update_option( 'ahbn_admin_fullscreen', $status );
-	wp_send_json_success( array( 'fullscreen' => $status ) );
+	update_option( 'ahbn_hide_wp_menu', $status );
+	wp_send_json_success( array( 'hidden' => $status ) );
 }
-add_action( 'wp_ajax_ahbn_save_fullscreen_pref', 'ahbn_save_fullscreen_preference' );
+add_action( 'wp_ajax_ahbn_save_wp_menu_toggle', 'ahbn_save_wp_menu_toggle_preference' );
 
 /*--------------------------------------------------------------
 # 6. Activation & Setup Routines
@@ -352,6 +338,7 @@ function ahbn_plugin_deactivate() {
 	delete_transient( 'ahbn_dashboard_stats' );
 	delete_transient( 'ahbn_all_rooms_list' );
 	delete_transient( 'ahbn_rooms_active_count' );
+	delete_option( 'ahbn_hide_wp_menu' );
 	flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, 'ahbn_plugin_deactivate' );
